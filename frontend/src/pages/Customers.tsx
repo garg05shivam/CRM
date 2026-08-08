@@ -4,8 +4,11 @@ import {
   useState,
 } from "react";
 
+import { useAuth } from "../context/AuthContext";
+
 import {
   createCustomer,
+  deleteCustomer,
   getCustomer,
   getCustomers,
   updateCustomer,
@@ -44,6 +47,8 @@ const emptyForm: CustomerInput = {
 };
 
 export const Customers = () => {
+  const { user } = useAuth();
+
   const [customers, setCustomers] =
     useState<Customer[]>([]);
 
@@ -108,6 +113,7 @@ export const Customers = () => {
     event: React.FormEvent,
   ) => {
     event.preventDefault();
+
     loadCustomers(search);
   };
 
@@ -245,11 +251,38 @@ export const Customers = () => {
     }
   };
 
+  const handleDelete = async (
+    customer: Customer,
+  ) => {
+    const confirmed = window.confirm(
+      `Delete customer "${customer.customerName}"? This action cannot be undone.`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setError("");
+
+      await deleteCustomer(customer.id);
+
+      await loadCustomers(search);
+    } catch (error) {
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Failed to delete customer",
+      );
+    }
+  };
+
   return (
     <div className="customers-page">
       <div className="page-header">
         <div>
           <h1>Customers</h1>
+
           <p>
             Manage your CRM customers
           </p>
@@ -273,6 +306,8 @@ export const Customers = () => {
             : "Add Customer"}
         </button>
       </div>
+
+      {/* Create / Edit Form */}
 
       {showForm && (
         <form
@@ -481,6 +516,8 @@ export const Customers = () => {
         </form>
       )}
 
+      {/* Search */}
+
       <form
         className="customer-search"
         onSubmit={handleSearch}
@@ -499,17 +536,23 @@ export const Customers = () => {
         </button>
       </form>
 
+      {/* Loading */}
+
       {loading && (
         <div className="page-message">
           Loading customers...
         </div>
       )}
 
+      {/* Error */}
+
       {error && (
         <div className="page-error">
           {error}
         </div>
       )}
+
+      {/* Customer Table */}
 
       {!loading && !error && (
         <div className="customer-table-wrapper">
@@ -594,6 +637,21 @@ export const Customers = () => {
                           >
                             Edit
                           </button>
+
+                          {user?.role ===
+                            "ADMIN" && (
+                            <button
+                              type="button"
+                              className="table-button table-button-danger"
+                              onClick={() =>
+                                handleDelete(
+                                  customer,
+                                )
+                              }
+                            >
+                              Delete
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -605,6 +663,8 @@ export const Customers = () => {
         </div>
       )}
 
+      {/* Customer Details Modal */}
+
       {showDetails &&
         selectedCustomer && (
           <div className="customer-modal-backdrop">
@@ -612,10 +672,15 @@ export const Customers = () => {
               <div className="customer-modal-header">
                 <div>
                   <h2>
-                    {selectedCustomer.customerName}
+                    {
+                      selectedCustomer.customerName
+                    }
                   </h2>
+
                   <p>
-                    {selectedCustomer.businessName}
+                    {
+                      selectedCustomer.businessName
+                    }
                   </p>
                 </div>
 
@@ -634,13 +699,17 @@ export const Customers = () => {
               <div className="customer-details-grid">
                 <div>
                   <span>Mobile</span>
+
                   <strong>
-                    {selectedCustomer.mobileNumber}
+                    {
+                      selectedCustomer.mobileNumber
+                    }
                   </strong>
                 </div>
 
                 <div>
                   <span>Email</span>
+
                   <strong>
                     {selectedCustomer.email ||
                       "-"}
@@ -649,13 +718,17 @@ export const Customers = () => {
 
                 <div>
                   <span>Customer Type</span>
+
                   <strong>
-                    {selectedCustomer.customerType}
+                    {
+                      selectedCustomer.customerType
+                    }
                   </strong>
                 </div>
 
                 <div>
                   <span>Status</span>
+
                   <strong>
                     {selectedCustomer.status}
                   </strong>
@@ -663,6 +736,7 @@ export const Customers = () => {
 
                 <div>
                   <span>GST Number</span>
+
                   <strong>
                     {selectedCustomer.gstNumber ||
                       "-"}
@@ -671,14 +745,18 @@ export const Customers = () => {
 
                 <div>
                   <span>Follow-up Date</span>
+
                   <strong>
-                    {selectedCustomer.followUpDate ||
-                      "-"}
+                    {
+                      selectedCustomer.followUpDate ||
+                      "-"
+                    }
                   </strong>
                 </div>
 
                 <div className="details-full">
                   <span>Address</span>
+
                   <strong>
                     {selectedCustomer.address}
                   </strong>
@@ -686,6 +764,7 @@ export const Customers = () => {
 
                 <div className="details-full">
                   <span>Notes</span>
+
                   <strong>
                     {selectedCustomer.notes ||
                       "-"}
@@ -705,6 +784,23 @@ export const Customers = () => {
                 >
                   Edit Customer
                 </button>
+
+                {user?.role ===
+                  "ADMIN" && (
+                  <button
+                    type="button"
+                    className="table-button table-button-danger"
+                    onClick={async () => {
+                      setShowDetails(false);
+                      await handleDelete(
+                        selectedCustomer,
+                      );
+                      setSelectedCustomer(null);
+                    }}
+                  >
+                    Delete Customer
+                  </button>
+                )}
 
                 <button
                   type="button"
