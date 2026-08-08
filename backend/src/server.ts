@@ -36,12 +36,6 @@ app.use("/warehouses", warehouseRoutes);
 app.use("/inventory", inventoryRoutes);
 app.use("/sales-challans", challanRoutes);
 app.use("/dashboard", dashboardRoutes);
-app.use(notFoundHandler);
-app.use(errorHandler);
-app.use(notFoundHandler);
-app.use(errorHandler);
-
-
 app.get("/health", (_req, res) => {
   res.status(200).json({
     success: true,
@@ -67,6 +61,9 @@ app.get("/health/db", async (_req, res) => {
     });
   }
 });
+
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 app.listen(env.port, () => {
   console.log(`Server running on port ${env.port}`);

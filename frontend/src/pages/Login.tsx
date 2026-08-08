@@ -1,10 +1,8 @@
-import {
-  FormEvent,
-  useState,
-} from "react";
+import { useState } from "react";
+import type { FormEvent } from "react";
 
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 
 export const Login = () => {
   const navigate = useNavigate();

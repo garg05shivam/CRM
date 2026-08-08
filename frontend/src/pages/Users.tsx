@@ -4,7 +4,7 @@ import {
   useState,
 } from "react";
 
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 
 import {
   changeUserPassword,
@@ -93,7 +93,9 @@ export const Users = () => {
   );
 
   useEffect(() => {
-    loadUsers();
+    (async () => {
+      await loadUsers();
+    })();
   }, [loadUsers]);
 
   const handleCreate = async (

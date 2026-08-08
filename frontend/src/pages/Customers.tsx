@@ -4,7 +4,7 @@ import {
   useState,
 } from "react";
 
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 
 import {
   createCustomer,
@@ -140,7 +140,9 @@ export const Customers = () => {
   );
 
   useEffect(() => {
-    loadCustomers();
+    (async () => {
+      await loadCustomers();
+    })();
   }, [loadCustomers]);
 
   const handleSearch = (

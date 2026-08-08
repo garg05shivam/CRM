@@ -1,6 +1,5 @@
 import { apiRequest } from "./client";
 import type {
-  Customer,
   CustomerInput,
   CustomerResponse,
   CustomersResponse,

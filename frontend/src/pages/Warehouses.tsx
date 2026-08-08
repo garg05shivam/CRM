@@ -4,7 +4,7 @@ import {
   useState,
 } from "react";
 
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 
 import {
   createWarehouse,
@@ -75,7 +75,9 @@ export const Warehouses = () => {
     }, []);
 
   useEffect(() => {
-    loadWarehouses();
+    (async () => {
+      await loadWarehouses();
+    })();
   }, [loadWarehouses]);
 
   const handleCreate = async (
