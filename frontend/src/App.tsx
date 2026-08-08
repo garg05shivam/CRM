@@ -7,6 +7,7 @@ import {
 import { Login } from "./pages/Login";
 import { Dashboard } from "./pages/Dashboard";
 import { Customers } from "./pages/Customers";
+import { Products } from "./pages/Products";
 
 import { ProtectedRoute } from "./routes/ProtectedRoute";
 import { RoleRoute } from "./routes/RoleRoute";
@@ -46,6 +47,25 @@ function App() {
             <Route
               path="/customers"
               element={<Customers />}
+            />
+          </Route>
+
+          {/* Products */}
+          <Route
+            element={
+              <RoleRoute
+                roles={[
+                  "ADMIN",
+                  "SALES",
+                  "WAREHOUSE",
+                  "ACCOUNTS",
+                ]}
+              />
+            }
+          >
+            <Route
+              path="/products"
+              element={<Products />}
             />
           </Route>
         </Route>

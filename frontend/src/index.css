@@ -708,3 +708,21 @@ button {
     flex-direction: column;
   }
 }
+.products-page {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.stock-low {
+  color: #c62828;
+}
+
+.status-active {
+  background: #e7f6ec;
+  color: #18794e;
+}
+
+.status-inactive {
+  background: #f1f3f5;
+  color: #687386;
+}

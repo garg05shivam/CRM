@@ -46,16 +46,16 @@ export const createProduct = async (
       )
       RETURNING
         id,
-        product_name,
+        product_name AS "productName",
         sku,
         category,
-        unit_price,
-        current_stock,
-        minimum_stock_quantity,
-        warehouse_id,
-        is_active,
-        created_at,
-        updated_at
+        unit_price AS "unitPrice",
+        current_stock AS "currentStock",
+        minimum_stock_quantity AS "minimumStockQuantity",
+        warehouse_id AS "warehouseId",
+        is_active AS "isActive",
+        created_at AS "createdAt",
+        updated_at AS "updatedAt"
     `,
     [
       data.productName,
@@ -77,17 +77,17 @@ export const getProducts = async (
     `
       SELECT
         p.id,
-        p.product_name,
+        p.product_name AS "productName",
         p.sku,
         p.category,
-        p.unit_price,
-        p.current_stock,
-        p.minimum_stock_quantity,
-        p.warehouse_id,
-        p.is_active,
-        p.created_at,
-        p.updated_at,
-        w.name AS warehouse_name
+        p.unit_price AS "unitPrice",
+        p.current_stock AS "currentStock",
+        p.minimum_stock_quantity AS "minimumStockQuantity",
+        p.warehouse_id AS "warehouseId",
+        p.is_active AS "isActive",
+        p.created_at AS "createdAt",
+        p.updated_at AS "updatedAt",
+        w.name AS "warehouseName"
       FROM products p
       INNER JOIN warehouses w
         ON w.id = p.warehouse_id
@@ -111,18 +111,18 @@ export const getProductById = async (
     `
       SELECT
         p.id,
-        p.product_name,
+        p.product_name AS "productName",
         p.sku,
         p.category,
-        p.unit_price,
-        p.current_stock,
-        p.minimum_stock_quantity,
-        p.warehouse_id,
-        p.is_active,
-        p.created_at,
-        p.updated_at,
-        w.name AS warehouse_name,
-        w.location AS warehouse_location
+        p.unit_price AS "unitPrice",
+        p.current_stock AS "currentStock",
+        p.minimum_stock_quantity AS "minimumStockQuantity",
+        p.warehouse_id AS "warehouseId",
+        p.is_active AS "isActive",
+        p.created_at AS "createdAt",
+        p.updated_at AS "updatedAt",
+        w.name AS "warehouseName",
+        w.location AS "warehouseLocation"
       FROM products p
       INNER JOIN warehouses w
         ON w.id = p.warehouse_id
@@ -174,13 +174,19 @@ export const updateProduct = async (
     column: string,
     value: unknown,
   ) => {
-    fields.push(`${column} = $${parameterIndex}`);
+    fields.push(
+      `${column} = $${parameterIndex}`,
+    );
+
     values.push(value);
     parameterIndex += 1;
   };
 
   if (data.productName !== undefined) {
-    addField("product_name", data.productName);
+    addField(
+      "product_name",
+      data.productName,
+    );
   }
 
   if (data.sku !== undefined) {
@@ -188,11 +194,17 @@ export const updateProduct = async (
   }
 
   if (data.category !== undefined) {
-    addField("category", data.category);
+    addField(
+      "category",
+      data.category,
+    );
   }
 
   if (data.unitPrice !== undefined) {
-    addField("unit_price", data.unitPrice);
+    addField(
+      "unit_price",
+      data.unitPrice,
+    );
   }
 
   if (
@@ -205,11 +217,17 @@ export const updateProduct = async (
   }
 
   if (data.warehouseId !== undefined) {
-    addField("warehouse_id", data.warehouseId);
+    addField(
+      "warehouse_id",
+      data.warehouseId,
+    );
   }
 
   if (data.isActive !== undefined) {
-    addField("is_active", data.isActive);
+    addField(
+      "is_active",
+      data.isActive,
+    );
   }
 
   if (fields.length === 0) {
@@ -217,6 +235,7 @@ export const updateProduct = async (
   }
 
   fields.push("updated_at = NOW()");
+
   values.push(id);
 
   const result = await pool.query(
@@ -226,16 +245,16 @@ export const updateProduct = async (
       WHERE id = $${parameterIndex}
       RETURNING
         id,
-        product_name,
+        product_name AS "productName",
         sku,
         category,
-        unit_price,
-        current_stock,
-        minimum_stock_quantity,
-        warehouse_id,
-        is_active,
-        created_at,
-        updated_at
+        unit_price AS "unitPrice",
+        current_stock AS "currentStock",
+        minimum_stock_quantity AS "minimumStockQuantity",
+        warehouse_id AS "warehouseId",
+        is_active AS "isActive",
+        created_at AS "createdAt",
+        updated_at AS "updatedAt"
     `,
     values,
   );
