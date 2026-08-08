@@ -5,7 +5,10 @@ import {
 } from "../middlewares/auth.middleware.js";
 import {
   create,
+  getById,
   list,
+  remove,
+  update,
 } from "./customer.controller.js";
 
 const router = Router();
@@ -22,6 +25,24 @@ router.get(
   "/",
   authorizeRoles("ADMIN", "SALES", "ACCOUNTS"),
   list,
+);
+
+router.get(
+  "/:id",
+  authorizeRoles("ADMIN", "SALES", "ACCOUNTS"),
+  getById,
+);
+
+router.put(
+  "/:id",
+  authorizeRoles("ADMIN", "SALES"),
+  update,
+);
+
+router.delete(
+  "/:id",
+  authorizeRoles("ADMIN"),
+  remove,
 );
 
 export default router;

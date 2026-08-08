@@ -46,11 +46,13 @@ export const createCustomerSchema = z.object({
     .min(5)
     .max(1000),
 
-  status: z.enum([
-    "LEAD",
-    "ACTIVE",
-    "INACTIVE",
-  ]).optional(),
+  status: z
+    .enum([
+      "LEAD",
+      "ACTIVE",
+      "INACTIVE",
+    ])
+    .optional(),
 
   followUpDate: z
     .string()
