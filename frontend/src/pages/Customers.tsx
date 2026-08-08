@@ -6,7 +6,9 @@ import {
 
 import {
   createCustomer,
+  getCustomer,
   getCustomers,
+  updateCustomer,
 } from "../api/customers";
 
 import type {
@@ -66,6 +68,15 @@ export const Customers = () => {
   const [formError, setFormError] =
     useState("");
 
+  const [selectedCustomer, setSelectedCustomer] =
+    useState<Customer | null>(null);
+
+  const [showDetails, setShowDetails] =
+    useState(false);
+
+  const [editingCustomer, setEditingCustomer] =
+    useState<Customer | null>(null);
+
   const loadCustomers = useCallback(
     async (value?: string) => {
       try {
@@ -110,6 +121,13 @@ export const Customers = () => {
     }));
   };
 
+  const resetForm = () => {
+    setForm(emptyForm);
+    setFormError("");
+    setShowForm(false);
+    setEditingCustomer(null);
+  };
+
   const handleCreate = async (
     event: React.FormEvent,
   ) => {
@@ -129,8 +147,7 @@ export const Customers = () => {
         notes: form.notes || undefined,
       });
 
-      setForm(emptyForm);
-      setShowForm(false);
+      resetForm();
 
       await loadCustomers(search);
     } catch (error) {
@@ -138,6 +155,90 @@ export const Customers = () => {
         error instanceof Error
           ? error.message
           : "Failed to create customer",
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleView = async (
+    customerId: string,
+  ) => {
+    try {
+      setError("");
+
+      const response =
+        await getCustomer(customerId);
+
+      setSelectedCustomer(response.data);
+      setShowDetails(true);
+    } catch (error) {
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Failed to load customer",
+      );
+    }
+  };
+
+  const handleEdit = (
+    customer: Customer,
+  ) => {
+    setEditingCustomer(customer);
+
+    setForm({
+      customerName: customer.customerName,
+      mobileNumber: customer.mobileNumber,
+      email: customer.email ?? "",
+      businessName: customer.businessName,
+      gstNumber: customer.gstNumber ?? "",
+      customerType: customer.customerType,
+      address: customer.address,
+      status: customer.status,
+      followUpDate:
+        customer.followUpDate ?? "",
+      notes: customer.notes ?? "",
+    });
+
+    setFormError("");
+    setShowDetails(false);
+    setShowForm(true);
+  };
+
+  const handleUpdate = async (
+    event: React.FormEvent,
+  ) => {
+    event.preventDefault();
+
+    if (!editingCustomer) {
+      return;
+    }
+
+    try {
+      setSaving(true);
+      setFormError("");
+
+      await updateCustomer(
+        editingCustomer.id,
+        {
+          ...form,
+          email: form.email || undefined,
+          gstNumber:
+            form.gstNumber || undefined,
+          followUpDate:
+            form.followUpDate || undefined,
+          notes: form.notes || undefined,
+        },
+      );
+
+      resetForm();
+
+      await loadCustomers(search);
+    } catch (error) {
+      setFormError(
+        error instanceof Error
+          ? error.message
+          : "Failed to update customer",
       );
     } finally {
       setSaving(false);
@@ -156,9 +257,16 @@ export const Customers = () => {
 
         <button
           className="primary-button"
-          onClick={() =>
-            setShowForm((value) => !value)
-          }
+          onClick={() => {
+            if (showForm) {
+              resetForm();
+            } else {
+              setEditingCustomer(null);
+              setForm(emptyForm);
+              setFormError("");
+              setShowForm(true);
+            }
+          }}
         >
           {showForm
             ? "Close"
@@ -169,9 +277,17 @@ export const Customers = () => {
       {showForm && (
         <form
           className="customer-form"
-          onSubmit={handleCreate}
+          onSubmit={
+            editingCustomer
+              ? handleUpdate
+              : handleCreate
+          }
         >
-          <h2>Add Customer</h2>
+          <h2>
+            {editingCustomer
+              ? "Edit Customer"
+              : "Add Customer"}
+          </h2>
 
           {formError && (
             <div className="page-error">
@@ -345,11 +461,7 @@ export const Customers = () => {
             <button
               type="button"
               className="secondary-button"
-              onClick={() => {
-                setShowForm(false);
-                setForm(emptyForm);
-                setFormError("");
-              }}
+              onClick={resetForm}
             >
               Cancel
             </button>
@@ -361,7 +473,9 @@ export const Customers = () => {
             >
               {saving
                 ? "Saving..."
-                : "Create Customer"}
+                : editingCustomer
+                  ? "Save Changes"
+                  : "Create Customer"}
             </button>
           </div>
         </form>
@@ -408,6 +522,7 @@ export const Customers = () => {
                 <th>Type</th>
                 <th>Status</th>
                 <th>Follow-up</th>
+                <th>Actions</th>
               </tr>
             </thead>
 
@@ -415,7 +530,7 @@ export const Customers = () => {
               {customers.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={7}
                     className="empty-state"
                   >
                     No customers found.
@@ -428,15 +543,19 @@ export const Customers = () => {
                       <td>
                         {customer.customerName}
                       </td>
+
                       <td>
                         {customer.mobileNumber}
                       </td>
+
                       <td>
                         {customer.businessName}
                       </td>
+
                       <td>
                         {customer.customerType}
                       </td>
+
                       <td>
                         <span
                           className={`status-badge status-${customer.status.toLowerCase()}`}
@@ -444,9 +563,38 @@ export const Customers = () => {
                           {customer.status}
                         </span>
                       </td>
+
                       <td>
                         {customer.followUpDate ||
                           "-"}
+                      </td>
+
+                      <td>
+                        <div className="customer-actions">
+                          <button
+                            type="button"
+                            className="table-button"
+                            onClick={() =>
+                              handleView(
+                                customer.id,
+                              )
+                            }
+                          >
+                            View
+                          </button>
+
+                          <button
+                            type="button"
+                            className="table-button"
+                            onClick={() =>
+                              handleEdit(
+                                customer,
+                              )
+                            }
+                          >
+                            Edit
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ),
@@ -456,6 +604,122 @@ export const Customers = () => {
           </table>
         </div>
       )}
+
+      {showDetails &&
+        selectedCustomer && (
+          <div className="customer-modal-backdrop">
+            <div className="customer-modal">
+              <div className="customer-modal-header">
+                <div>
+                  <h2>
+                    {selectedCustomer.customerName}
+                  </h2>
+                  <p>
+                    {selectedCustomer.businessName}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  className="modal-close"
+                  onClick={() => {
+                    setShowDetails(false);
+                    setSelectedCustomer(null);
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="customer-details-grid">
+                <div>
+                  <span>Mobile</span>
+                  <strong>
+                    {selectedCustomer.mobileNumber}
+                  </strong>
+                </div>
+
+                <div>
+                  <span>Email</span>
+                  <strong>
+                    {selectedCustomer.email ||
+                      "-"}
+                  </strong>
+                </div>
+
+                <div>
+                  <span>Customer Type</span>
+                  <strong>
+                    {selectedCustomer.customerType}
+                  </strong>
+                </div>
+
+                <div>
+                  <span>Status</span>
+                  <strong>
+                    {selectedCustomer.status}
+                  </strong>
+                </div>
+
+                <div>
+                  <span>GST Number</span>
+                  <strong>
+                    {selectedCustomer.gstNumber ||
+                      "-"}
+                  </strong>
+                </div>
+
+                <div>
+                  <span>Follow-up Date</span>
+                  <strong>
+                    {selectedCustomer.followUpDate ||
+                      "-"}
+                  </strong>
+                </div>
+
+                <div className="details-full">
+                  <span>Address</span>
+                  <strong>
+                    {selectedCustomer.address}
+                  </strong>
+                </div>
+
+                <div className="details-full">
+                  <span>Notes</span>
+                  <strong>
+                    {selectedCustomer.notes ||
+                      "-"}
+                  </strong>
+                </div>
+              </div>
+
+              <div className="form-actions">
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() =>
+                    handleEdit(
+                      selectedCustomer,
+                    )
+                  }
+                >
+                  Edit Customer
+                </button>
+
+                <button
+                  type="button"
+                  className="primary-button"
+                  onClick={() => {
+                    setShowDetails(false);
+                    setSelectedCustomer(null);
+                  }}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
     </div>
   );
 };
