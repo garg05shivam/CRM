@@ -20,6 +20,16 @@ import type {
   CustomerType,
   CustomerStatus,
 } from "../types/customer";
+import {
+  createFollowUp,
+  deleteFollowUp,
+  getCustomerFollowUps,
+  updateFollowUp,
+} from "../api/followUps";
+import type {
+  FollowUp,
+  FollowUpInput,
+} from "../types/followUp";
 
 const CUSTOMER_TYPES: CustomerType[] = [
   "RETAIL",
@@ -81,6 +91,30 @@ export const Customers = () => {
 
   const [editingCustomer, setEditingCustomer] =
     useState<Customer | null>(null);
+
+  const [followUps, setFollowUps] =
+    useState<FollowUp[]>([]);
+
+  const [followUpsLoading, setFollowUpsLoading] =
+    useState(false);
+
+  const [followUpError, setFollowUpError] =
+    useState("");
+
+  const [showFollowUpForm, setShowFollowUpForm] =
+    useState(false);
+
+  const [editingFollowUp, setEditingFollowUp] =
+    useState<FollowUp | null>(null);
+
+  const [followUpForm, setFollowUpForm] =
+    useState<FollowUpInput>({
+      note: "",
+      followUpDate: "",
+    });
+
+  const [savingFollowUp, setSavingFollowUp] =
+    useState(false);
 
   const loadCustomers = useCallback(
     async (value?: string) => {
@@ -167,6 +201,28 @@ export const Customers = () => {
     }
   };
 
+  const loadFollowUps = async (
+    customerId: string,
+  ) => {
+    try {
+      setFollowUpsLoading(true);
+      setFollowUpError("");
+
+      const response =
+        await getCustomerFollowUps(customerId);
+
+      setFollowUps(response.data);
+    } catch (error) {
+      setFollowUpError(
+        error instanceof Error
+          ? error.message
+          : "Failed to load follow-ups",
+      );
+    } finally {
+      setFollowUpsLoading(false);
+    }
+  };
+
   const handleView = async (
     customerId: string,
   ) => {
@@ -178,6 +234,8 @@ export const Customers = () => {
 
       setSelectedCustomer(response.data);
       setShowDetails(true);
+
+      await loadFollowUps(customerId);
     } catch (error) {
       setError(
         error instanceof Error
@@ -273,6 +331,137 @@ export const Customers = () => {
         error instanceof Error
           ? error.message
           : "Failed to delete customer",
+      );
+    }
+  };
+
+  const resetFollowUpForm = () => {
+    setFollowUpForm({
+      note: "",
+      followUpDate: "",
+    });
+
+    setEditingFollowUp(null);
+    setShowFollowUpForm(false);
+    setFollowUpError("");
+  };
+
+  const handleFollowUpChange = (
+    field: keyof FollowUpInput,
+    value: string,
+  ) => {
+    setFollowUpForm((current) => ({
+      ...current,
+      [field]: value,
+    }));
+  };
+
+  const handleCreateFollowUp = async (
+    event: React.FormEvent,
+  ) => {
+    event.preventDefault();
+
+    if (!selectedCustomer) {
+      return;
+    }
+
+    try {
+      setSavingFollowUp(true);
+      setFollowUpError("");
+
+      await createFollowUp(
+        selectedCustomer.id,
+        followUpForm,
+      );
+
+      resetFollowUpForm();
+
+      await loadFollowUps(
+        selectedCustomer.id,
+      );
+    } catch (error) {
+      setFollowUpError(
+        error instanceof Error
+          ? error.message
+          : "Failed to create follow-up",
+      );
+    } finally {
+      setSavingFollowUp(false);
+    }
+  };
+
+  const handleEditFollowUp = (
+    followUp: FollowUp,
+  ) => {
+    setEditingFollowUp(followUp);
+
+    setFollowUpForm({
+      note: followUp.note,
+      followUpDate: followUp.followUpDate,
+    });
+
+    setFollowUpError("");
+    setShowFollowUpForm(true);
+  };
+
+  const handleUpdateFollowUp = async (
+    event: React.FormEvent,
+  ) => {
+    event.preventDefault();
+
+    if (!editingFollowUp || !selectedCustomer) {
+      return;
+    }
+
+    try {
+      setSavingFollowUp(true);
+      setFollowUpError("");
+
+      await updateFollowUp(
+        editingFollowUp.id,
+        followUpForm,
+      );
+
+      resetFollowUpForm();
+
+      await loadFollowUps(
+        selectedCustomer.id,
+      );
+    } catch (error) {
+      setFollowUpError(
+        error instanceof Error
+          ? error.message
+          : "Failed to update follow-up",
+      );
+    } finally {
+      setSavingFollowUp(false);
+    }
+  };
+
+  const handleDeleteFollowUp = async (
+    followUp: FollowUp,
+  ) => {
+    const confirmed = window.confirm(
+      "Delete this follow-up? This action cannot be undone.",
+    );
+
+    if (!confirmed || !selectedCustomer) {
+      return;
+    }
+
+    try {
+      setFollowUpError("");
+
+      await deleteFollowUp(followUp.id);
+
+      await loadFollowUps(
+        selectedCustomer.id,
+      );
+    } catch (error) {
+      setFollowUpError(
+        error instanceof Error
+          ? error.message
+          : "Failed to delete follow-up",
       );
     }
   };
@@ -770,6 +959,170 @@ export const Customers = () => {
                       "-"}
                   </strong>
                 </div>
+              </div>
+
+              <div className="customer-followups">
+                <div className="followups-header">
+                  <div>
+                    <h3>Follow-ups</h3>
+                    <p>
+                      Customer follow-up history
+                    </p>
+                  </div>
+
+                  {(user?.role === "ADMIN" ||
+                    user?.role === "SALES") && (
+                    <button
+                      type="button"
+                      className="primary-button"
+                      onClick={() => {
+                        setEditingFollowUp(null);
+                        setFollowUpForm({
+                          note: "",
+                          followUpDate: "",
+                        });
+                        setFollowUpError("");
+                        setShowFollowUpForm(true);
+                      }}
+                    >
+                      + Add Follow-up
+                    </button>
+                  )}
+                </div>
+
+                {followUpError && (
+                  <div className="page-error">
+                    {followUpError}
+                  </div>
+                )}
+
+                {followUpsLoading ? (
+                  <div className="page-message">
+                    Loading follow-ups...
+                  </div>
+                ) : followUps.length === 0 ? (
+                  <div className="empty-state">
+                    No follow-ups found.
+                  </div>
+                ) : (
+                  <div className="followup-list">
+                    {followUps.map((followUp) => (
+                      <div
+                        key={followUp.id}
+                        className="followup-card"
+                      >
+                        <div>
+                          <strong>
+                            {followUp.followUpDate}
+                          </strong>
+                          <p>{followUp.note}</p>
+                        </div>
+
+                        <div className="customer-actions">
+                          {(user?.role === "ADMIN" ||
+                            user?.role === "SALES") && (
+                            <button
+                              type="button"
+                              className="table-button"
+                              onClick={() =>
+                                handleEditFollowUp(
+                                  followUp,
+                                )
+                              }
+                            >
+                              Edit
+                            </button>
+                          )}
+
+                          {user?.role === "ADMIN" && (
+                            <button
+                              type="button"
+                              className="table-button table-button-danger"
+                              onClick={() =>
+                                handleDeleteFollowUp(
+                                  followUp,
+                                )
+                              }
+                            >
+                              Delete
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {showFollowUpForm && (
+                  <form
+                    className="followup-form"
+                    onSubmit={
+                      editingFollowUp
+                        ? handleUpdateFollowUp
+                        : handleCreateFollowUp
+                    }
+                  >
+                    <h3>
+                      {editingFollowUp
+                        ? "Edit Follow-up"
+                        : "Add Follow-up"}
+                    </h3>
+
+                    <label>
+                      Follow-up Date *
+                      <input
+                        type="date"
+                        required
+                        value={
+                          followUpForm.followUpDate
+                        }
+                        onChange={(event) =>
+                          handleFollowUpChange(
+                            "followUpDate",
+                            event.target.value,
+                          )
+                        }
+                      />
+                    </label>
+
+                    <label>
+                      Note *
+                      <textarea
+                        required
+                        value={followUpForm.note}
+                        onChange={(event) =>
+                          handleFollowUpChange(
+                            "note",
+                            event.target.value,
+                          )
+                        }
+                        placeholder="Enter follow-up note"
+                      />
+                    </label>
+
+                    <div className="form-actions">
+                      <button
+                        type="button"
+                        className="secondary-button"
+                        onClick={resetFollowUpForm}
+                      >
+                        Cancel
+                      </button>
+
+                      <button
+                        type="submit"
+                        className="primary-button"
+                        disabled={savingFollowUp}
+                      >
+                        {savingFollowUp
+                          ? "Saving..."
+                          : editingFollowUp
+                            ? "Save Changes"
+                            : "Create Follow-up"}
+                      </button>
+                    </div>
+                  </form>
+                )}
               </div>
 
               <div className="form-actions">
