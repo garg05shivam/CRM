@@ -1,4 +1,5 @@
 
+-- UUID generation
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 
@@ -52,6 +53,7 @@ CREATE TABLE users (
 );
 
 
+
 CREATE TABLE warehouses (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
@@ -67,6 +69,8 @@ CREATE TABLE warehouses (
 
     CONSTRAINT warehouses_name_unique UNIQUE (name)
 );
+
+
 
 CREATE TABLE customers (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -95,7 +99,6 @@ CREATE TABLE customers (
 
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-
 
 CREATE TABLE customer_follow_ups (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -258,6 +261,7 @@ CREATE TABLE sales_challan_items (
 );
 
 
+
 CREATE INDEX idx_customers_name
     ON customers(customer_name);
 
@@ -287,4 +291,3 @@ CREATE INDEX idx_challans_status
 
 CREATE INDEX idx_challan_items_challan
     ON sales_challan_items(challan_id);
-

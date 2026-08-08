@@ -1,9 +1,8 @@
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
-import dotenv from "dotenv";
-
-dotenv.config();
+import { env } from "./config/env.js";
+import { pool } from "./pool.js";
 
 const app = express();
 
@@ -18,8 +17,25 @@ app.get("/health", (_req, res) => {
   });
 });
 
-const PORT = process.env.PORT || 5000;
+app.get("/health/db", async (_req, res) => {
+  try {
+    const result = await pool.query("SELECT current_database()");
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+    res.status(200).json({
+      success: true,
+      message: "Database connection is healthy",
+      database: result.rows[0].current_database,
+    });
+  } catch (error) {
+    console.error("Database health check failed:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Database connection failed",
+    });
+  }
+});
+
+app.listen(env.port, () => {
+  console.log(`Server running on port ${env.port}`);
 });
