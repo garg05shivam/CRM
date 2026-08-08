@@ -65,18 +65,18 @@ export const createCustomer = async (
       )
       RETURNING
         id,
-        customer_name,
-        mobile_number,
+        customer_name AS "customerName",
+        mobile_number AS "mobileNumber",
         email,
-        business_name,
-        gst_number,
-        customer_type,
+        business_name AS "businessName",
+        gst_number AS "gstNumber",
+        customer_type AS "customerType",
         address,
         status,
-        follow_up_date,
+        follow_up_date AS "followUpDate",
         notes,
-        created_at,
-        updated_at
+        created_at AS "createdAt",
+        updated_at AS "updatedAt"
     `,
     [
       data.customerName,
@@ -102,18 +102,18 @@ export const getCustomers = async (
     `
       SELECT
         id,
-        customer_name,
-        mobile_number,
+        customer_name AS "customerName",
+        mobile_number AS "mobileNumber",
         email,
-        business_name,
-        gst_number,
-        customer_type,
+        business_name AS "businessName",
+        gst_number AS "gstNumber",
+        customer_type AS "customerType",
         address,
         status,
-        follow_up_date,
+        follow_up_date AS "followUpDate",
         notes,
-        created_at,
-        updated_at
+        created_at AS "createdAt",
+        updated_at AS "updatedAt"
       FROM customers
       WHERE
         $1 = ''
@@ -136,18 +136,18 @@ export const getCustomerById = async (
     `
       SELECT
         id,
-        customer_name,
-        mobile_number,
+        customer_name AS "customerName",
+        mobile_number AS "mobileNumber",
         email,
-        business_name,
-        gst_number,
-        customer_type,
+        business_name AS "businessName",
+        gst_number AS "gstNumber",
+        customer_type AS "customerType",
         address,
         status,
-        follow_up_date,
+        follow_up_date AS "followUpDate",
         notes,
-        created_at,
-        updated_at
+        created_at AS "createdAt",
+        updated_at AS "updatedAt"
       FROM customers
       WHERE id = $1
     `,
@@ -184,11 +184,17 @@ export const updateCustomer = async (
   };
 
   if (data.customerName !== undefined) {
-    addField("customer_name", data.customerName);
+    addField(
+      "customer_name",
+      data.customerName,
+    );
   }
 
   if (data.mobileNumber !== undefined) {
-    addField("mobile_number", data.mobileNumber);
+    addField(
+      "mobile_number",
+      data.mobileNumber,
+    );
   }
 
   if (data.email !== undefined) {
@@ -200,7 +206,10 @@ export const updateCustomer = async (
   }
 
   if (data.businessName !== undefined) {
-    addField("business_name", data.businessName);
+    addField(
+      "business_name",
+      data.businessName,
+    );
   }
 
   if (data.gstNumber !== undefined) {
@@ -220,7 +229,10 @@ export const updateCustomer = async (
   }
 
   if (data.address !== undefined) {
-    addField("address", data.address);
+    addField(
+      "address",
+      data.address,
+    );
   }
 
   if (data.status !== undefined) {
@@ -252,7 +264,6 @@ export const updateCustomer = async (
   }
 
   fields.push("updated_at = NOW()");
-
   values.push(id);
 
   const result = await pool.query(
@@ -262,18 +273,18 @@ export const updateCustomer = async (
       WHERE id = $${parameterIndex}
       RETURNING
         id,
-        customer_name,
-        mobile_number,
+        customer_name AS "customerName",
+        mobile_number AS "mobileNumber",
         email,
-        business_name,
-        gst_number,
-        customer_type,
+        business_name AS "businessName",
+        gst_number AS "gstNumber",
+        customer_type AS "customerType",
         address,
         status,
-        follow_up_date,
+        follow_up_date AS "followUpDate",
         notes,
-        created_at,
-        updated_at
+        created_at AS "createdAt",
+        updated_at AS "updatedAt"
     `,
     values,
   );
