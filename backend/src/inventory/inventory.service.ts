@@ -38,9 +38,14 @@ export const createStockMovement = async (
     let newStock: number;
 
     if (data.movementType === "IN") {
-      newStock = product.current_stock + data.quantity;
+      newStock =
+        product.current_stock +
+        data.quantity;
     } else {
-      if (product.current_stock < data.quantity) {
+      if (
+        product.current_stock <
+        data.quantity
+      ) {
         throw new AppError(
           "Insufficient stock",
           400,
@@ -49,58 +54,64 @@ export const createStockMovement = async (
       }
 
       newStock =
-        product.current_stock - data.quantity;
+        product.current_stock -
+        data.quantity;
     }
 
-    const updateResult = await client.query(
-      `
-        UPDATE products
-        SET
-          current_stock = $1,
-          updated_at = NOW()
-        WHERE id = $2
-        RETURNING
-          id,
-          product_name,
-          sku,
-          current_stock
-      `,
-      [newStock, data.productId],
-    );
+    const updateResult =
+      await client.query(
+        `
+          UPDATE products
+          SET
+            current_stock = $1,
+            updated_at = NOW()
+          WHERE id = $2
+          RETURNING
+            id,
+            product_name AS "productName",
+            sku,
+            current_stock AS "currentStock"
+        `,
+        [
+          newStock,
+          data.productId,
+        ],
+      );
 
-    const movementResult = await client.query(
-      `
-        INSERT INTO stock_movements (
-          product_id,
-          quantity,
-          movement_type,
-          reason,
-          created_by
-        )
-        VALUES (
-          $1,
-          $2,
-          $3::stock_movement_type,
-          $4,
-          $5
-        )
-        RETURNING
-          id,
-          product_id,
-          quantity,
-          movement_type,
-          reason,
-          created_by,
-          created_at
-      `,
-      [
-        data.productId,
-        data.quantity,
-        data.movementType,
-        data.reason,
-        createdBy,
-      ],
-    );
+    const movementResult =
+      await client.query(
+        `
+          INSERT INTO stock_movements (
+            product_id,
+            quantity,
+            movement_type,
+            reason,
+            created_by
+          )
+          VALUES (
+            $1,
+            $2,
+            $3::stock_movement_type,
+            $4,
+            $5
+          )
+          RETURNING
+            id,
+            product_id AS "productId",
+            quantity,
+            movement_type AS "movementType",
+            reason,
+            created_by AS "createdBy",
+            created_at AS "createdAt"
+        `,
+        [
+          data.productId,
+          data.quantity,
+          data.movementType,
+          data.reason,
+          createdBy,
+        ],
+      );
 
     await client.query("COMMIT");
 
@@ -131,15 +142,15 @@ export const getStockMovements = async (
     `
       SELECT
         sm.id,
-        sm.product_id,
-        p.product_name,
+        sm.product_id AS "productId",
+        p.product_name AS "productName",
         p.sku,
         sm.quantity,
-        sm.movement_type,
+        sm.movement_type AS "movementType",
         sm.reason,
-        sm.created_by,
-        u.name AS created_by_name,
-        sm.created_at
+        sm.created_by AS "createdBy",
+        u.name AS "createdByName",
+        sm.created_at AS "createdAt"
       FROM stock_movements sm
       INNER JOIN products p
         ON p.id = sm.product_id
@@ -154,27 +165,31 @@ export const getStockMovements = async (
   return result.rows;
 };
 
-export const getLowStockProducts = async () => {
-  const result = await pool.query(
-    `
-      SELECT
-        p.id,
-        p.product_name,
-        p.sku,
-        p.category,
-        p.current_stock,
-        p.minimum_stock_quantity,
-        p.warehouse_id,
-        w.name AS warehouse_name
-      FROM products p
-      INNER JOIN warehouses w
-        ON w.id = p.warehouse_id
-      WHERE
-        p.is_active = true
-        AND p.current_stock <= p.minimum_stock_quantity
-      ORDER BY p.current_stock ASC, p.product_name ASC
-    `,
-  );
+export const getLowStockProducts =
+  async () => {
+    const result = await pool.query(
+      `
+        SELECT
+          p.id,
+          p.product_name AS "productName",
+          p.sku,
+          p.category,
+          p.current_stock AS "currentStock",
+          p.minimum_stock_quantity AS "minimumStockQuantity",
+          p.warehouse_id AS "warehouseId",
+          w.name AS "warehouseName"
+        FROM products p
+        INNER JOIN warehouses w
+          ON w.id = p.warehouse_id
+        WHERE
+          p.is_active = true
+          AND p.current_stock <=
+              p.minimum_stock_quantity
+        ORDER BY
+          p.current_stock ASC,
+          p.product_name ASC
+      `,
+    );
 
-  return result.rows;
-};
+    return result.rows;
+  };

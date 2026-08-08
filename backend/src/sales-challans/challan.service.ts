@@ -6,6 +6,7 @@ import type {
 
 const generateChallanNumber = () => {
   const timestamp = Date.now();
+
   const random = Math.floor(
     1000 + Math.random() * 9000,
   );
@@ -22,16 +23,19 @@ export const createChallan = async (
   try {
     await client.query("BEGIN");
 
-    const customerResult = await client.query(
-      `
-        SELECT id
-        FROM customers
-        WHERE id = $1
-      `,
-      [data.customerId],
-    );
+    const customerResult =
+      await client.query(
+        `
+          SELECT id
+          FROM customers
+          WHERE id = $1
+        `,
+        [data.customerId],
+      );
 
-    if (customerResult.rows.length === 0) {
+    if (
+      customerResult.rows.length === 0
+    ) {
       throw new AppError(
         "Customer not found",
         404,
@@ -43,10 +47,12 @@ export const createChallan = async (
       (item) => item.productId,
     );
 
-    const uniqueProductIds = new Set(productIds);
+    const uniqueProductIds =
+      new Set(productIds);
 
     if (
-      uniqueProductIds.size !== productIds.length
+      uniqueProductIds.size !==
+      productIds.length
     ) {
       throw new AppError(
         "A product can appear only once in a challan",
@@ -55,21 +61,22 @@ export const createChallan = async (
       );
     }
 
-    const productResult = await client.query(
-      `
-        SELECT
-          id,
-          product_name,
-          sku,
-          unit_price,
-          current_stock,
-          is_active
-        FROM products
-        WHERE id = ANY($1::uuid[])
-        FOR UPDATE
-      `,
-      [productIds],
-    );
+    const productResult =
+      await client.query(
+        `
+          SELECT
+            id,
+            product_name,
+            sku,
+            unit_price,
+            current_stock,
+            is_active
+          FROM products
+          WHERE id = ANY($1::uuid[])
+          FOR UPDATE
+        `,
+        [productIds],
+      );
 
     if (
       productResult.rows.length !==
@@ -83,9 +90,11 @@ export const createChallan = async (
     }
 
     for (const item of data.items) {
-      const product = productResult.rows.find(
-        (row) => row.id === item.productId,
-      );
+      const product =
+        productResult.rows.find(
+          (row) =>
+            row.id === item.productId,
+        );
 
       if (!product) {
         throw new AppError(
@@ -104,55 +113,68 @@ export const createChallan = async (
       }
     }
 
-    const totalQuantity = data.items.reduce(
-      (total, item) => total + item.quantity,
-      0,
-    );
+    const totalQuantity =
+      data.items.reduce(
+        (total, item) =>
+          total + item.quantity,
+        0,
+      );
 
     const challanNumber =
       generateChallanNumber();
 
-    const challanResult = await client.query(
-      `
-        INSERT INTO sales_challans (
-          challan_number,
-          customer_id,
-          total_quantity,
-          status,
-          created_by
-        )
-        VALUES (
-          $1,
-          $2,
-          $3,
-          'DRAFT'::challan_status,
-          $4
-        )
-        RETURNING
-          id,
-          challan_number,
-          customer_id,
-          total_quantity,
-          status,
-          created_by,
-          created_at,
-          updated_at
-      `,
-      [
-        challanNumber,
-        data.customerId,
-        totalQuantity,
-        createdBy,
-      ],
-    );
+    const challanResult =
+      await client.query(
+        `
+          INSERT INTO sales_challans (
+            challan_number,
+            customer_id,
+            total_quantity,
+            status,
+            created_by
+          )
+          VALUES (
+            $1,
+            $2,
+            $3,
+            'DRAFT'::challan_status,
+            $4
+          )
+          RETURNING
+            id,
+            challan_number AS "challanNumber",
+            customer_id AS "customerId",
+            total_quantity AS "totalQuantity",
+            status,
+            created_by AS "createdBy",
+            created_at AS "createdAt",
+            updated_at AS "updatedAt"
+        `,
+        [
+          challanNumber,
+          data.customerId,
+          totalQuantity,
+          createdBy,
+        ],
+      );
 
     const challan =
       challanResult.rows[0];
 
     for (const item of data.items) {
-      const product = productResult.rows.find(
-        (row) => row.id === item.productId,
-      );
+      const product =
+        productResult.rows.find(
+          (row) =>
+            row.id === item.productId,
+        );
+
+      if (!product) {
+        throw new AppError(
+          "Product not found",
+          404,
+          "PRODUCT_NOT_FOUND",
+        );
+      }
 
       await client.query(
         `
@@ -200,15 +222,15 @@ export const getChallans = async () => {
     `
       SELECT
         sc.id,
-        sc.challan_number,
-        sc.customer_id,
-        c.customer_name,
-        sc.total_quantity,
+        sc.challan_number AS "challanNumber",
+        sc.customer_id AS "customerId",
+        c.customer_name AS "customerName",
+        sc.total_quantity AS "totalQuantity",
         sc.status,
-        sc.created_by,
-        u.name AS created_by_name,
-        sc.created_at,
-        sc.updated_at
+        sc.created_by AS "createdBy",
+        u.name AS "createdByName",
+        sc.created_at AS "createdAt",
+        sc.updated_at AS "updatedAt"
       FROM sales_challans sc
       INNER JOIN customers c
         ON c.id = sc.customer_id
@@ -224,30 +246,33 @@ export const getChallans = async () => {
 export const getChallanById = async (
   id: string,
 ) => {
-  const challanResult = await pool.query(
-    `
-      SELECT
-        sc.id,
-        sc.challan_number,
-        sc.customer_id,
-        c.customer_name,
-        sc.total_quantity,
-        sc.status,
-        sc.created_by,
-        u.name AS created_by_name,
-        sc.created_at,
-        sc.updated_at
-      FROM sales_challans sc
-      INNER JOIN customers c
-        ON c.id = sc.customer_id
-      INNER JOIN users u
-        ON u.id = sc.created_by
-      WHERE sc.id = $1
-    `,
-    [id],
-  );
+  const challanResult =
+    await pool.query(
+      `
+        SELECT
+          sc.id,
+          sc.challan_number AS "challanNumber",
+          sc.customer_id AS "customerId",
+          c.customer_name AS "customerName",
+          sc.total_quantity AS "totalQuantity",
+          sc.status,
+          sc.created_by AS "createdBy",
+          u.name AS "createdByName",
+          sc.created_at AS "createdAt",
+          sc.updated_at AS "updatedAt"
+        FROM sales_challans sc
+        INNER JOIN customers c
+          ON c.id = sc.customer_id
+        INNER JOIN users u
+          ON u.id = sc.created_by
+        WHERE sc.id = $1
+      `,
+      [id],
+    );
 
-  if (challanResult.rows.length === 0) {
+  if (
+    challanResult.rows.length === 0
+  ) {
     throw new AppError(
       "Sales challan not found",
       404,
@@ -255,23 +280,24 @@ export const getChallanById = async (
     );
   }
 
-  const itemsResult = await pool.query(
-    `
-      SELECT
-        id,
-        challan_id,
-        product_id,
-        product_name_snapshot,
-        sku_snapshot,
-        unit_price_snapshot,
-        quantity,
-        created_at
-      FROM sales_challan_items
-      WHERE challan_id = $1
-      ORDER BY created_at ASC
-    `,
-    [id],
-  );
+  const itemsResult =
+    await pool.query(
+      `
+        SELECT
+          id,
+          challan_id AS "challanId",
+          product_id AS "productId",
+          product_name_snapshot AS "productNameSnapshot",
+          sku_snapshot AS "skuSnapshot",
+          unit_price_snapshot AS "unitPriceSnapshot",
+          quantity,
+          created_at AS "createdAt"
+        FROM sales_challan_items
+        WHERE challan_id = $1
+        ORDER BY created_at ASC
+      `,
+      [id],
+    );
 
   return {
     ...challanResult.rows[0],
@@ -287,20 +313,23 @@ export const confirmChallan = async (
   try {
     await client.query("BEGIN");
 
-    const challanResult = await client.query(
-      `
-        SELECT
-          id,
-          status,
-          customer_id
-        FROM sales_challans
-        WHERE id = $1
-        FOR UPDATE
-      `,
-      [id],
-    );
+    const challanResult =
+      await client.query(
+        `
+          SELECT
+            id,
+            status,
+            customer_id
+          FROM sales_challans
+          WHERE id = $1
+          FOR UPDATE
+        `,
+        [id],
+      );
 
-    if (challanResult.rows.length === 0) {
+    if (
+      challanResult.rows.length === 0
+    ) {
       throw new AppError(
         "Sales challan not found",
         404,
@@ -308,7 +337,8 @@ export const confirmChallan = async (
       );
     }
 
-    const challan = challanResult.rows[0];
+    const challan =
+      challanResult.rows[0];
 
     if (challan.status !== "DRAFT") {
       throw new AppError(
@@ -318,20 +348,21 @@ export const confirmChallan = async (
       );
     }
 
-    const itemsResult = await client.query(
-      `
-        SELECT
-          id,
-          product_id,
-          quantity,
-          product_name_snapshot,
-          sku_snapshot
-        FROM sales_challan_items
-        WHERE challan_id = $1
-        FOR UPDATE
-      `,
-      [id],
-    );
+    const itemsResult =
+      await client.query(
+        `
+          SELECT
+            id,
+            product_id,
+            quantity,
+            product_name_snapshot,
+            sku_snapshot
+          FROM sales_challan_items
+          WHERE challan_id = $1
+          FOR UPDATE
+        `,
+        [id],
+      );
 
     if (itemsResult.rows.length === 0) {
       throw new AppError(
@@ -341,28 +372,31 @@ export const confirmChallan = async (
       );
     }
 
-    const productIds = itemsResult.rows.map(
-      (item) => item.product_id,
-    );
+    const productIds =
+      itemsResult.rows.map(
+        (item) => item.product_id,
+      );
 
-    const productsResult = await client.query(
-      `
-        SELECT
-          id,
-          product_name,
-          current_stock,
-          is_active
-        FROM products
-        WHERE id = ANY($1::uuid[])
-        FOR UPDATE
-      `,
-      [productIds],
-    );
+    const productsResult =
+      await client.query(
+        `
+          SELECT
+            id,
+            product_name,
+            current_stock,
+            is_active
+          FROM products
+          WHERE id = ANY($1::uuid[])
+          FOR UPDATE
+        `,
+        [productIds],
+      );
 
     for (const item of itemsResult.rows) {
       const product =
         productsResult.rows.find(
-          (row) => row.id === item.product_id,
+          (row) =>
+            row.id === item.product_id,
         );
 
       if (!product) {
@@ -396,8 +430,17 @@ export const confirmChallan = async (
     for (const item of itemsResult.rows) {
       const product =
         productsResult.rows.find(
-          (row) => row.id === item.product_id,
+          (row) =>
+            row.id === item.product_id,
         );
+
+      if (!product) {
+        throw new AppError(
+          "Product not found",
+          404,
+          "PRODUCT_NOT_FOUND",
+        );
+      }
 
       const newStock =
         product.current_stock -
@@ -411,7 +454,10 @@ export const confirmChallan = async (
             updated_at = NOW()
           WHERE id = $2
         `,
-        [newStock, product.id],
+        [
+          newStock,
+          product.id,
+        ],
       );
 
       await client.query(
@@ -435,7 +481,7 @@ export const confirmChallan = async (
         [
           product.id,
           item.quantity,
-          `Sales challan confirmation`,
+          "Sales challan confirmation",
           id,
         ],
       );
@@ -445,7 +491,8 @@ export const confirmChallan = async (
       `
         UPDATE sales_challans
         SET
-          status = 'CONFIRMED'::challan_status,
+          status =
+            'CONFIRMED'::challan_status,
           updated_at = NOW()
         WHERE id = $1
       `,
@@ -470,30 +517,37 @@ export const cancelChallan = async (
     `
       UPDATE sales_challans
       SET
-        status = 'CANCELLED'::challan_status,
+        status =
+          'CANCELLED'::challan_status,
         updated_at = NOW()
       WHERE id = $1
-        AND status = 'DRAFT'::challan_status
+        AND status =
+          'DRAFT'::challan_status
       RETURNING
         id,
-        challan_number,
+        challan_number AS "challanNumber",
         status,
-        updated_at
+        updated_at AS "updatedAt"
     `,
     [id],
   );
 
   if (result.rows.length === 0) {
-    const existing = await pool.query(
-      `
-        SELECT id, status
-        FROM sales_challans
-        WHERE id = $1
-      `,
-      [id],
-    );
+    const existing =
+      await pool.query(
+        `
+          SELECT
+            id,
+            status
+          FROM sales_challans
+          WHERE id = $1
+        `,
+        [id],
+      );
 
-    if (existing.rows.length === 0) {
+    if (
+      existing.rows.length === 0
+    ) {
       throw new AppError(
         "Sales challan not found",
         404,

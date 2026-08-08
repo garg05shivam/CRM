@@ -1,5 +1,7 @@
 import { NavLink } from "react-router-dom";
+
 import { useAuth } from "../context/AuthContext";
+
 import type { UserRole } from "../types/auth";
 
 interface MenuItem {
@@ -22,12 +24,19 @@ const menuItems: MenuItem[] = [
   {
     label: "Customers",
     path: "/customers",
-    roles: ["ADMIN", "SALES", "ACCOUNTS"],
+    roles: [
+      "ADMIN",
+      "SALES",
+      "ACCOUNTS",
+    ],
   },
   {
     label: "Follow-ups",
     path: "/follow-ups",
-    roles: ["ADMIN", "SALES"],
+    roles: [
+      "ADMIN",
+      "SALES",
+    ],
   },
   {
     label: "Products",
@@ -42,17 +51,32 @@ const menuItems: MenuItem[] = [
   {
     label: "Warehouses",
     path: "/warehouses",
-    roles: ["ADMIN", "WAREHOUSE"],
+    roles: [
+      "ADMIN",
+      "WAREHOUSE",
+    ],
   },
   {
     label: "Inventory",
     path: "/inventory",
-    roles: ["ADMIN", "WAREHOUSE"],
+    roles: [
+      "ADMIN",
+      "WAREHOUSE",
+    ],
   },
   {
     label: "Sales Challans",
     path: "/sales-challans",
-    roles: ["ADMIN", "SALES", "ACCOUNTS"],
+    roles: [
+      "ADMIN",
+      "SALES",
+      "ACCOUNTS",
+    ],
+  },
+  {
+    label: "Users",
+    path: "/users",
+    roles: ["ADMIN"],
   },
 ];
 
@@ -66,8 +90,8 @@ export const Sidebar = () => {
   );
 
   return (
-    <aside className="sidebar">
-      <div className="sidebar-logo">
+    <aside className="app-sidebar">
+      <div className="sidebar-brand">
         <h2>CRM</h2>
         <span>Management System</span>
       </div>

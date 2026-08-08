@@ -16,6 +16,8 @@ import warehouseRoutes from "./warehouses/warehouse.routes.js";
 import inventoryRoutes from "./inventory/inventory.routes.js";
 import challanRoutes from "./sales-challans/challan.routes.js";
 import dashboardRoutes from "./dashboard/dashboard.routes.js";
+import userRoutes from "./users/user.routes.js";
+
 
 const app = express();
 app.use(express.json());
@@ -26,6 +28,7 @@ app.use(express.json());
 
 app.use("/auth", authRoutes);
 app.use("/protected", protectedRoutes);
+app.use("/users", userRoutes);
 app.use("/customers", customerRoutes);
 app.use(followUpRoutes);
 app.use("/products", productRoutes);

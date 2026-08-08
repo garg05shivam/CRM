@@ -8,6 +8,10 @@ import { Login } from "./pages/Login";
 import { Dashboard } from "./pages/Dashboard";
 import { Customers } from "./pages/Customers";
 import { Products } from "./pages/Products";
+import { Inventory } from "./pages/Inventory";
+import { Warehouses } from "./pages/Warehouses";
+import { SalesChallans } from "./pages/SalesChallans";
+import { Users } from "./pages/Users";
 
 import { ProtectedRoute } from "./routes/ProtectedRoute";
 import { RoleRoute } from "./routes/RoleRoute";
@@ -26,6 +30,7 @@ function App() {
       {/* Protected routes */}
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
+
           {/* Dashboard */}
           <Route
             path="/dashboard"
@@ -50,6 +55,27 @@ function App() {
             />
           </Route>
 
+          {/* Follow-ups */}
+          <Route
+            element={
+              <RoleRoute
+                roles={[
+                  "ADMIN",
+                  "SALES",
+                ]}
+              />
+            }
+          >
+            <Route
+              path="/follow-ups"
+              element={
+                <div>
+                  Follow-ups
+                </div>
+              }
+            />
+          </Route>
+
           {/* Products */}
           <Route
             element={
@@ -68,6 +94,75 @@ function App() {
               element={<Products />}
             />
           </Route>
+
+          {/* Warehouses */}
+          <Route
+            element={
+              <RoleRoute
+                roles={[
+                  "ADMIN",
+                  "WAREHOUSE",
+                ]}
+              />
+            }
+          >
+            <Route
+              path="/warehouses"
+              element={<Warehouses />}
+            />
+          </Route>
+
+          {/* Inventory */}
+          <Route
+            element={
+              <RoleRoute
+                roles={[
+                  "ADMIN",
+                  "WAREHOUSE",
+                ]}
+              />
+            }
+          >
+            <Route
+              path="/inventory"
+              element={<Inventory />}
+            />
+          </Route>
+
+          {/* Sales Challans */}
+          <Route
+            element={
+              <RoleRoute
+                roles={[
+                  "ADMIN",
+                  "SALES",
+                  "ACCOUNTS",
+                ]}
+              />
+            }
+          >
+            <Route
+              path="/sales-challans"
+              element={
+                <SalesChallans />
+              }
+            />
+          </Route>
+
+          {/* User Management */}
+          <Route
+            element={
+              <RoleRoute
+                roles={["ADMIN"]}
+              />
+            }
+          >
+            <Route
+              path="/users"
+              element={<Users />}
+            />
+          </Route>
+
         </Route>
       </Route>
 
