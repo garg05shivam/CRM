@@ -9,7 +9,14 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "typecheck": "tsc --noEmit"
+  },
+  
   "dependencies": {
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
@@ -23,4 +30,5 @@
     "tsx": "^4.23.11",
     "typescript": "^7.0.2"
   }
+  
 }
