@@ -13,6 +13,7 @@ import customerRoutes from "./customers/customer.routes.js";
 import followUpRoutes from "./follow-ups/follow-up.routes.js";
 import productRoutes from "./products/product.routes.js";
 import warehouseRoutes from "./warehouses/warehouse.routes.js";
+import inventoryRoutes from "./inventory/inventory.routes.js";
 
 const app = express();
 app.use(express.json());
@@ -27,6 +28,7 @@ app.use("/customers", customerRoutes);
 app.use(followUpRoutes);
 app.use("/products", productRoutes);
 app.use("/warehouses", warehouseRoutes);
+app.use("/inventory", inventoryRoutes);
 app.use(notFoundHandler);
 app.use(errorHandler);
 app.use(notFoundHandler);
