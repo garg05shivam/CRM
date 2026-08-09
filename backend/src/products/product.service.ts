@@ -70,38 +70,95 @@ export const createProduct = async (
   return result.rows[0];
 };
 
-export const getProducts = async (
-  search?: string,
-) => {
-  const result = await pool.query(
-    `
-      SELECT
-        p.id,
-        p.product_name AS "productName",
-        p.sku,
-        p.category,
-        p.unit_price AS "unitPrice",
-        p.current_stock AS "currentStock",
-        p.minimum_stock_quantity AS "minimumStockQuantity",
-        p.warehouse_id AS "warehouseId",
-        p.is_active AS "isActive",
-        p.created_at AS "createdAt",
-        p.updated_at AS "updatedAt",
-        w.name AS "warehouseName"
-      FROM products p
-      INNER JOIN warehouses w
-        ON w.id = p.warehouse_id
-      WHERE
-        $1 = ''
-        OR p.product_name ILIKE '%' || $1 || '%'
-        OR p.sku ILIKE '%' || $1 || '%'
-        OR p.category ILIKE '%' || $1 || '%'
-      ORDER BY p.created_at DESC
-    `,
-    [search ?? ""],
-  );
+export interface GetProductsFilter {
+  search?: string;
+  category?: string;
+  warehouseId?: string;
+  page?: number;
+  limit?: number;
+  unpaginated?: boolean;
+}
 
-  return result.rows;
+export const getProducts = async (
+  options: GetProductsFilter = {},
+) => {
+  const { search, category, warehouseId, page = 1, limit = 10, unpaginated } = options;
+
+  const conditions: string[] = [];
+  const params: unknown[] = [];
+  let paramIndex = 1;
+
+  if (search && search.trim() !== "") {
+    conditions.push(
+      `(p.product_name ILIKE $${paramIndex} OR p.sku ILIKE $${paramIndex} OR p.category ILIKE $${paramIndex})`,
+    );
+    params.push(`%${search.trim()}%`);
+    paramIndex += 1;
+  }
+
+  if (category && category.trim() !== "") {
+    conditions.push(`p.category = $${paramIndex}`);
+    params.push(category.trim());
+    paramIndex += 1;
+  }
+
+  if (warehouseId && warehouseId.trim() !== "") {
+    conditions.push(`p.warehouse_id = $${paramIndex}::uuid`);
+    params.push(warehouseId.trim());
+    paramIndex += 1;
+  }
+
+  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+
+  const countQuery = `
+    SELECT COUNT(*)::integer AS total
+    FROM products p
+    INNER JOIN warehouses w ON w.id = p.warehouse_id
+    ${whereClause}
+  `;
+  const countResult = await pool.query(countQuery, params);
+  const total = countResult.rows[0]?.total ?? 0;
+
+  let query = `
+    SELECT
+      p.id,
+      p.product_name AS "productName",
+      p.sku,
+      p.category,
+      p.unit_price AS "unitPrice",
+      p.current_stock AS "currentStock",
+      p.minimum_stock_quantity AS "minimumStockQuantity",
+      p.warehouse_id AS "warehouseId",
+      p.is_active AS "isActive",
+      p.created_at AS "createdAt",
+      p.updated_at AS "updatedAt",
+      w.name AS "warehouseName"
+    FROM products p
+    INNER JOIN warehouses w
+      ON w.id = p.warehouse_id
+    ${whereClause}
+    ORDER BY p.created_at DESC
+  `;
+
+  if (!unpaginated) {
+    const offset = (Math.max(1, page) - 1) * Math.max(1, limit);
+    query += ` LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+    params.push(limit, offset);
+  }
+
+  const result = await pool.query(query, params);
+
+  const totalPages = Math.ceil(total / Math.max(1, limit)) || 1;
+
+  return {
+    data: result.rows,
+    pagination: {
+      total,
+      page,
+      limit,
+      totalPages,
+    },
+  };
 };
 
 export const getProductById = async (

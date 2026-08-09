@@ -7,6 +7,7 @@ import {
 import {
   createFollowUp,
   deleteFollowUp,
+  getAllFollowUps,
   getCustomerFollowUps,
   updateFollowUp,
 } from "./follow-up.service.js";
@@ -161,5 +162,27 @@ export const remove = async (
   res.status(200).json({
     success: true,
     message: "Follow-up deleted successfully",
+  });
+};
+
+export const listAll = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  const search =
+    typeof req.query.search === "string"
+      ? req.query.search.trim()
+      : undefined;
+
+  const date =
+    typeof req.query.date === "string"
+      ? req.query.date.trim()
+      : undefined;
+
+  const followUps = await getAllFollowUps(search, date);
+
+  res.status(200).json({
+    success: true,
+    data: followUps,
   });
 };

@@ -45,9 +45,12 @@ export interface CustomerInput {
   notes?: string;
 }
 
+import type { PaginationMeta } from "./pagination";
+
 export interface CustomersResponse {
   success: boolean;
   data: Customer[];
+  pagination?: PaginationMeta;
 }
 
 export interface CustomerResponse {

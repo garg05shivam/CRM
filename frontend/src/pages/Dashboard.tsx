@@ -67,26 +67,14 @@ export const Dashboard = () => {
 
   return (
     <div className="dashboard-page">
-      <header className="dashboard-header">
+      <div className="page-header">
         <div>
-          <h1>CRM Dashboard</h1>
-
+          <h1>Dashboard</h1>
           <p>
-            Welcome,{" "}
-            <strong>{user?.name}</strong>
+            Welcome back, <strong>{user?.name}</strong>! Overview of CRM system metrics.
           </p>
         </div>
-
-        <div className="user-info">
-          <span>
-            {user?.role}
-          </span>
-
-          <button onClick={logout}>
-            Logout
-          </button>
-        </div>
-      </header>
+      </div>
 
       <main>
         <section className="dashboard-cards">

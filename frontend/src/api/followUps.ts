@@ -15,6 +15,20 @@ export const getCustomerFollowUps = (
   );
 };
 
+export const getAllFollowUps = (
+  search?: string,
+  date?: string,
+) => {
+  const params = new URLSearchParams();
+  if (search?.trim()) params.append("search", search.trim());
+  if (date?.trim()) params.append("date", date.trim());
+  const queryString = params.toString() ? `?${params.toString()}` : "";
+
+  return apiRequest<FollowUpsResponse>(
+    `/follow-ups${queryString}`,
+  );
+};
+
 export const createFollowUp = (
   customerId: string,
   data: FollowUpInput,

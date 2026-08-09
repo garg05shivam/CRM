@@ -33,9 +33,12 @@ export interface ProductUpdateInput {
   isActive?: boolean;
 }
 
+import type { PaginationMeta } from "./pagination";
+
 export interface ProductsResponse {
   success: boolean;
   data: Product[];
+  pagination?: PaginationMeta;
 }
 
 export interface ProductResponse {

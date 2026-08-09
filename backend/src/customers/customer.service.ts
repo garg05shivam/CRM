@@ -95,38 +95,89 @@ export const createCustomer = async (
   return result.rows[0];
 };
 
-export const getCustomers = async (
-  search?: string,
-) => {
-  const result = await pool.query(
-    `
-      SELECT
-        id,
-        customer_name AS "customerName",
-        mobile_number AS "mobileNumber",
-        email,
-        business_name AS "businessName",
-        gst_number AS "gstNumber",
-        customer_type AS "customerType",
-        address,
-        status,
-        follow_up_date AS "followUpDate",
-        notes,
-        created_at AS "createdAt",
-        updated_at AS "updatedAt"
-      FROM customers
-      WHERE
-        $1 = ''
-        OR customer_name ILIKE '%' || $1 || '%'
-        OR mobile_number ILIKE '%' || $1 || '%'
-        OR business_name ILIKE '%' || $1 || '%'
-        OR email ILIKE '%' || $1 || '%'
-      ORDER BY created_at DESC
-    `,
-    [search ?? ""],
-  );
+export interface GetCustomersFilter {
+  search?: string;
+  status?: CustomerStatus;
+  customerType?: CustomerType;
+  page?: number;
+  limit?: number;
+  unpaginated?: boolean;
+}
 
-  return result.rows;
+export const getCustomers = async (
+  options: GetCustomersFilter = {},
+) => {
+  const { search, status, customerType, page = 1, limit = 10, unpaginated } = options;
+
+  const conditions: string[] = [];
+  const params: unknown[] = [];
+  let paramIndex = 1;
+
+  if (search && search.trim() !== "") {
+    conditions.push(
+      `(customer_name ILIKE $${paramIndex} OR mobile_number ILIKE $${paramIndex} OR business_name ILIKE $${paramIndex} OR email ILIKE $${paramIndex})`,
+    );
+    params.push(`%${search.trim()}%`);
+    paramIndex += 1;
+  }
+
+  if (status) {
+    conditions.push(`status = $${paramIndex}::customer_status`);
+    params.push(status);
+    paramIndex += 1;
+  }
+
+  if (customerType) {
+    conditions.push(`customer_type = $${paramIndex}::customer_type`);
+    params.push(customerType);
+    paramIndex += 1;
+  }
+
+  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+
+  const countQuery = `SELECT COUNT(*)::integer AS total FROM customers ${whereClause}`;
+  const countResult = await pool.query(countQuery, params);
+  const total = countResult.rows[0]?.total ?? 0;
+
+  let query = `
+    SELECT
+      id,
+      customer_name AS "customerName",
+      mobile_number AS "mobileNumber",
+      email,
+      business_name AS "businessName",
+      gst_number AS "gstNumber",
+      customer_type AS "customerType",
+      address,
+      status,
+      follow_up_date AS "followUpDate",
+      notes,
+      created_at AS "createdAt",
+      updated_at AS "updatedAt"
+    FROM customers
+    ${whereClause}
+    ORDER BY created_at DESC
+  `;
+
+  if (!unpaginated) {
+    const offset = (Math.max(1, page) - 1) * Math.max(1, limit);
+    query += ` LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+    params.push(limit, offset);
+  }
+
+  const result = await pool.query(query, params);
+
+  const totalPages = Math.ceil(total / Math.max(1, limit)) || 1;
+
+  return {
+    data: result.rows,
+    pagination: {
+      total,
+      page,
+      limit,
+      totalPages,
+    },
+  };
 };
 
 export const getCustomerById = async (

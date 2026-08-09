@@ -30,6 +30,8 @@ import type {
   FollowUp,
   FollowUpInput,
 } from "../types/followUp";
+import { PaginationControls } from "../components/PaginationControls";
+import type { PaginationMeta } from "../types/pagination";
 
 const CUSTOMER_TYPES: CustomerType[] = [
   "RETAIL",
@@ -64,6 +66,21 @@ export const Customers = () => {
 
   const [search, setSearch] =
     useState("");
+
+  const [statusFilter, setStatusFilter] =
+    useState("");
+
+  const [typeFilter, setTypeFilter] =
+    useState("");
+
+  const [page, setPage] =
+    useState(1);
+
+  const [limit, setLimit] =
+    useState(10);
+
+  const [pagination, setPagination] =
+    useState<PaginationMeta | undefined>();
 
   const [loading, setLoading] =
     useState(true);
@@ -117,15 +134,39 @@ export const Customers = () => {
     useState(false);
 
   const loadCustomers = useCallback(
-    async (value?: string) => {
+    async (options?: string | { page?: number; limit?: number; search?: string; status?: string; customerType?: string }) => {
       try {
         setLoading(true);
         setError("");
 
+        let currentPage = page;
+        let currentLimit = limit;
+        let currentSearch = search;
+        let currentStatus = statusFilter;
+        let currentType = typeFilter;
+
+        if (typeof options === "string") {
+          currentSearch = options;
+          currentPage = 1;
+        } else if (options) {
+          if (options.page !== undefined) currentPage = options.page;
+          if (options.limit !== undefined) currentLimit = options.limit;
+          if (options.search !== undefined) currentSearch = options.search;
+          if (options.status !== undefined) currentStatus = options.status;
+          if (options.customerType !== undefined) currentType = options.customerType;
+        }
+
         const response =
-          await getCustomers(value);
+          await getCustomers({
+            search: currentSearch || undefined,
+            status: currentStatus || undefined,
+            customerType: currentType || undefined,
+            page: currentPage,
+            limit: currentLimit,
+          });
 
         setCustomers(response.data);
+        setPagination(response.pagination);
       } catch (error) {
         setError(
           error instanceof Error
@@ -136,7 +177,7 @@ export const Customers = () => {
         setLoading(false);
       }
     },
-    [],
+    [page, limit, search, statusFilter, typeFilter],
   );
 
   useEffect(() => {
@@ -149,8 +190,8 @@ export const Customers = () => {
     event: React.FormEvent,
   ) => {
     event.preventDefault();
-
-    loadCustomers(search);
+    setPage(1);
+    loadCustomers({ page: 1, limit, search, status: statusFilter, customerType: typeFilter });
   };
 
   const handleChange = (
@@ -707,11 +748,12 @@ export const Customers = () => {
         </form>
       )}
 
-      {/* Search */}
+      {/* Search & Filters */}
 
       <form
         className="customer-search"
         onSubmit={handleSearch}
+        style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}
       >
         <input
           type="text"
@@ -720,7 +762,38 @@ export const Customers = () => {
             setSearch(event.target.value)
           }
           placeholder="Search by name, mobile, business or email"
+          style={{ flex: 1, minWidth: "200px" }}
         />
+
+        <select
+          value={statusFilter}
+          onChange={(e) => {
+            setStatusFilter(e.target.value);
+            setPage(1);
+            loadCustomers({ page: 1, limit, search, status: e.target.value, customerType: typeFilter });
+          }}
+          style={{ padding: "8px 12px", borderRadius: "6px", border: "1px solid rgba(255,255,255,0.15)", background: "var(--input-bg, #0f131d)", color: "inherit" }}
+        >
+          <option value="">All Statuses</option>
+          {CUSTOMER_STATUSES.map((s) => (
+            <option key={s} value={s}>{s}</option>
+          ))}
+        </select>
+
+        <select
+          value={typeFilter}
+          onChange={(e) => {
+            setTypeFilter(e.target.value);
+            setPage(1);
+            loadCustomers({ page: 1, limit, search, status: statusFilter, customerType: e.target.value });
+          }}
+          style={{ padding: "8px 12px", borderRadius: "6px", border: "1px solid rgba(255,255,255,0.15)", background: "var(--input-bg, #0f131d)", color: "inherit" }}
+        >
+          <option value="">All Types</option>
+          {CUSTOMER_TYPES.map((t) => (
+            <option key={t} value={t}>{t}</option>
+          ))}
+        </select>
 
         <button type="submit">
           Search
@@ -746,112 +819,127 @@ export const Customers = () => {
       {/* Customer Table */}
 
       {!loading && !error && (
-        <div className="customer-table-wrapper">
-          <table className="customer-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Mobile</th>
-                <th>Business</th>
-                <th>Type</th>
-                <th>Status</th>
-                <th>Follow-up</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {customers.length === 0 ? (
+        <>
+          <div className="customer-table-wrapper">
+            <table className="customer-table">
+              <thead>
                 <tr>
-                  <td
-                    colSpan={7}
-                    className="empty-state"
-                  >
-                    No customers found.
-                  </td>
+                  <th>Name</th>
+                  <th>Mobile</th>
+                  <th>Business</th>
+                  <th>Type</th>
+                  <th>Status</th>
+                  <th>Follow-up</th>
+                  <th>Actions</th>
                 </tr>
-              ) : (
-                customers.map(
-                  (customer) => (
-                    <tr key={customer.id}>
-                      <td>
-                        {customer.customerName}
-                      </td>
+              </thead>
 
-                      <td>
-                        {customer.mobileNumber}
-                      </td>
+              <tbody>
+                {customers.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={7}
+                      className="empty-state"
+                    >
+                      No customers found.
+                    </td>
+                  </tr>
+                ) : (
+                  customers.map(
+                    (customer) => (
+                      <tr key={customer.id}>
+                        <td>
+                          {customer.customerName}
+                        </td>
 
-                      <td>
-                        {customer.businessName}
-                      </td>
+                        <td>
+                          {customer.mobileNumber}
+                        </td>
 
-                      <td>
-                        {customer.customerType}
-                      </td>
+                        <td>
+                          {customer.businessName}
+                        </td>
 
-                      <td>
-                        <span
-                          className={`status-badge status-${customer.status.toLowerCase()}`}
-                        >
-                          {customer.status}
-                        </span>
-                      </td>
+                        <td>
+                          {customer.customerType}
+                        </td>
 
-                      <td>
-                        {customer.followUpDate ||
-                          "-"}
-                      </td>
-
-                      <td>
-                        <div className="customer-actions">
-                          <button
-                            type="button"
-                            className="table-button"
-                            onClick={() =>
-                              handleView(
-                                customer.id,
-                              )
-                            }
+                        <td>
+                          <span
+                            className={`status-badge status-${customer.status.toLowerCase()}`}
                           >
-                            View
-                          </button>
+                            {customer.status}
+                          </span>
+                        </td>
 
-                          <button
-                            type="button"
-                            className="table-button"
-                            onClick={() =>
-                              handleEdit(
-                                customer,
-                              )
-                            }
-                          >
-                            Edit
-                          </button>
+                        <td>
+                          {customer.followUpDate ||
+                            "-"}
+                        </td>
 
-                          {user?.role ===
-                            "ADMIN" && (
+                        <td>
+                          <div className="customer-actions">
                             <button
                               type="button"
-                              className="table-button table-button-danger"
+                              className="table-button"
                               onClick={() =>
-                                handleDelete(
+                                handleView(
+                                  customer.id,
+                                )
+                              }
+                            >
+                              View
+                            </button>
+
+                            <button
+                              type="button"
+                              className="table-button"
+                              onClick={() =>
+                                handleEdit(
                                   customer,
                                 )
                               }
                             >
-                              Delete
+                              Edit
                             </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ),
-                )
-              )}
-            </tbody>
-          </table>
-        </div>
+
+                            {user?.role ===
+                              "ADMIN" && (
+                              <button
+                                type="button"
+                                className="table-button table-button-danger"
+                                onClick={() =>
+                                  handleDelete(
+                                    customer,
+                                  )
+                                }
+                              >
+                                Delete
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ),
+                  )
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          <PaginationControls
+            pagination={pagination}
+            onPageChange={(newPage) => {
+              setPage(newPage);
+              loadCustomers({ page: newPage, limit, search, status: statusFilter, customerType: typeFilter });
+            }}
+            onLimitChange={(newLimit) => {
+              setLimit(newLimit);
+              setPage(1);
+              loadCustomers({ page: 1, limit: newLimit, search, status: statusFilter, customerType: typeFilter });
+            }}
+          />
+        </>
       )}
 
       {/* Customer Details Modal */}

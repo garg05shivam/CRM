@@ -7,6 +7,7 @@ import {
 import { Login } from "./pages/Login";
 import { Dashboard } from "./pages/Dashboard";
 import { Customers } from "./pages/Customers";
+import { FollowUps } from "./pages/FollowUps";
 import { Products } from "./pages/Products";
 import { Inventory } from "./pages/Inventory";
 import { Warehouses } from "./pages/Warehouses";
@@ -68,11 +69,7 @@ function App() {
           >
             <Route
               path="/follow-ups"
-              element={
-                <div>
-                  Follow-ups
-                </div>
-              }
+              element={<FollowUps />}
             />
           </Route>
 

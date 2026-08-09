@@ -38,9 +38,12 @@ export interface Challan {
   items?: ChallanItem[];
 }
 
+import type { PaginationMeta } from "./pagination";
+
 export interface ChallansResponse {
   success: boolean;
   data: Challan[];
+  pagination?: PaginationMeta;
 }
 
 export interface ChallanResponse {

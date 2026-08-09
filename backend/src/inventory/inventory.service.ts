@@ -127,42 +127,110 @@ export const createStockMovement = async (
   }
 };
 
-export const getStockMovements = async (
-  productId?: string,
-) => {
-  const values: unknown[] = [];
-  let whereClause = "";
+export interface GetStockMovementsFilter {
+  productId?: string;
+  movementType?: "IN" | "OUT";
+  search?: string;
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  limit?: number;
+  unpaginated?: boolean;
+}
 
-  if (productId) {
-    values.push(productId);
-    whereClause = `WHERE sm.product_id = $1`;
+export const getStockMovements = async (
+  options: GetStockMovementsFilter = {},
+) => {
+  const { productId, movementType, search, startDate, endDate, page = 1, limit = 10, unpaginated } = options;
+
+  const conditions: string[] = [];
+  const params: unknown[] = [];
+  let paramIndex = 1;
+
+  if (productId && productId.trim() !== "") {
+    conditions.push(`sm.product_id = $${paramIndex}::uuid`);
+    params.push(productId.trim());
+    paramIndex += 1;
   }
 
-  const result = await pool.query(
-    `
-      SELECT
-        sm.id,
-        sm.product_id AS "productId",
-        p.product_name AS "productName",
-        p.sku,
-        sm.quantity,
-        sm.movement_type AS "movementType",
-        sm.reason,
-        sm.created_by AS "createdBy",
-        u.name AS "createdByName",
-        sm.created_at AS "createdAt"
-      FROM stock_movements sm
-      INNER JOIN products p
-        ON p.id = sm.product_id
-      INNER JOIN users u
-        ON u.id = sm.created_by
-      ${whereClause}
-      ORDER BY sm.created_at DESC
-    `,
-    values,
-  );
+  if (movementType) {
+    conditions.push(`sm.movement_type = $${paramIndex}::stock_movement_type`);
+    params.push(movementType);
+    paramIndex += 1;
+  }
 
-  return result.rows;
+  if (search && search.trim() !== "") {
+    conditions.push(
+      `(p.product_name ILIKE $${paramIndex} OR p.sku ILIKE $${paramIndex} OR sm.reason ILIKE $${paramIndex} OR u.name ILIKE $${paramIndex})`,
+    );
+    params.push(`%${search.trim()}%`);
+    paramIndex += 1;
+  }
+
+  if (startDate && startDate.trim() !== "") {
+    conditions.push(`sm.created_at >= $${paramIndex}::timestamptz`);
+    params.push(startDate.trim());
+    paramIndex += 1;
+  }
+
+  if (endDate && endDate.trim() !== "") {
+    conditions.push(`sm.created_at <= $${paramIndex}::timestamptz`);
+    params.push(endDate.trim());
+    paramIndex += 1;
+  }
+
+  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+
+  const countQuery = `
+    SELECT COUNT(*)::integer AS total
+    FROM stock_movements sm
+    INNER JOIN products p ON p.id = sm.product_id
+    INNER JOIN users u ON u.id = sm.created_by
+    ${whereClause}
+  `;
+  const countResult = await pool.query(countQuery, params);
+  const total = countResult.rows[0]?.total ?? 0;
+
+  let query = `
+    SELECT
+      sm.id,
+      sm.product_id AS "productId",
+      p.product_name AS "productName",
+      p.sku,
+      sm.quantity,
+      sm.movement_type AS "movementType",
+      sm.reason,
+      sm.created_by AS "createdBy",
+      u.name AS "createdByName",
+      sm.created_at AS "createdAt"
+    FROM stock_movements sm
+    INNER JOIN products p
+      ON p.id = sm.product_id
+    INNER JOIN users u
+      ON u.id = sm.created_by
+    ${whereClause}
+    ORDER BY sm.created_at DESC
+  `;
+
+  if (!unpaginated) {
+    const offset = (Math.max(1, page) - 1) * Math.max(1, limit);
+    query += ` LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+    params.push(limit, offset);
+  }
+
+  const result = await pool.query(query, params);
+
+  const totalPages = Math.ceil(total / Math.max(1, limit)) || 1;
+
+  return {
+    data: result.rows,
+    pagination: {
+      total,
+      page,
+      limit,
+      totalPages,
+    },
+  };
 };
 
 export const getLowStockProducts =

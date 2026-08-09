@@ -24,6 +24,8 @@ import type {
   ChallanItemInput,
   ChallanStatus,
 } from "../types/challan";
+import { PaginationControls } from "../components/PaginationControls";
+import type { PaginationMeta } from "../types/pagination";
 
 interface DraftItem extends ChallanItemInput {
   productName: string;
@@ -46,6 +48,21 @@ export const SalesChallans = () => {
 
   const [products, setProducts] =
     useState<Product[]>([]);
+
+  const [search, setSearch] =
+    useState("");
+
+  const [statusFilter, setStatusFilter] =
+    useState("");
+
+  const [page, setPage] =
+    useState(1);
+
+  const [limit, setLimit] =
+    useState(10);
+
+  const [pagination, setPagination] =
+    useState<PaginationMeta | undefined>();
 
   const [selectedCustomer, setSelectedCustomer] =
     useState("");
@@ -74,33 +91,21 @@ export const SalesChallans = () => {
   const [success, setSuccess] =
     useState("");
 
-  const loadData = useCallback(
-    async () => {
+  const loadChallans = useCallback(
+    async (currentPage = page, currentLimit = limit, currentSearch = search, currentStatus = statusFilter) => {
       try {
         setLoading(true);
         setError("");
 
-        const [
-          challansResponse,
-          customersResponse,
-          productsResponse,
-        ] = await Promise.all([
-          getChallans(),
-          getCustomers(),
-          getProducts(),
-        ]);
+        const response = await getChallans({
+          search: currentSearch || undefined,
+          status: currentStatus || undefined,
+          page: currentPage,
+          limit: currentLimit,
+        });
 
-        setChallans(
-          challansResponse.data,
-        );
-
-        setCustomers(
-          customersResponse.data,
-        );
-
-        setProducts(
-          productsResponse.data,
-        );
+        setChallans(response.data);
+        setPagination(response.pagination);
       } catch (error) {
         setError(
           error instanceof Error
@@ -111,14 +116,29 @@ export const SalesChallans = () => {
         setLoading(false);
       }
     },
-    [],
+    [page, limit, search, statusFilter],
   );
+
+  const loadDropdowns = useCallback(async () => {
+    try {
+      const [customersResponse, productsResponse] = await Promise.all([
+        getCustomers({ unpaginated: true }),
+        getProducts({ unpaginated: true }),
+      ]);
+
+      setCustomers(customersResponse.data);
+      setProducts(productsResponse.data);
+    } catch (error) {
+      console.error("Failed to load options:", error);
+    }
+  }, []);
 
   useEffect(() => {
     (async () => {
-      await loadData();
+      await loadChallans(page, limit, search, statusFilter);
+      await loadDropdowns();
     })();
-  }, [loadData]);
+  }, [page, limit, statusFilter]);
 
   const addItem = () => {
     setError("");
@@ -258,7 +278,7 @@ export const SalesChallans = () => {
       setQuantity(1);
       setItems([]);
 
-      await loadData();
+      await loadChallans();
     } catch (error) {
       setError(
         error instanceof Error
@@ -316,7 +336,7 @@ export const SalesChallans = () => {
 
       setSelectedChallan(null);
 
-      await loadData();
+      await loadChallans();
     } catch (error) {
       const message =
         error instanceof Error
@@ -364,7 +384,7 @@ export const SalesChallans = () => {
 
       setSelectedChallan(null);
 
-      await loadData();
+      await loadChallans();
     } catch (error) {
       setError(
         error instanceof Error
@@ -665,19 +685,61 @@ export const SalesChallans = () => {
       )}
 
       <div className="inventory-section">
-        <div className="section-header">
+        <div className="section-header" style={{ flexWrap: "wrap", gap: "16px" }}>
           <div>
             <h2>Challans</h2>
-
-            <p>
-              View and manage sales
-              challans.
-            </p>
+            <p>View and manage sales challans.</p>
           </div>
 
-          <strong>
-            {challans.length}
-          </strong>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              setPage(1);
+              loadChallans(1, limit, search, statusFilter);
+            }}
+            style={{ display: "flex", gap: "10px", alignItems: "center" }}
+          >
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search challan # or customer"
+              style={{
+                padding: "8px 12px",
+                borderRadius: "6px",
+                border: "1px solid rgba(255,255,255,0.15)",
+                background: "var(--input-bg, #0f131d)",
+                color: "inherit",
+                fontSize: "14px",
+              }}
+            />
+
+            <select
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setPage(1);
+                loadChallans(1, limit, search, e.target.value);
+              }}
+              style={{
+                padding: "8px 12px",
+                borderRadius: "6px",
+                border: "1px solid rgba(255,255,255,0.15)",
+                background: "var(--input-bg, #0f131d)",
+                color: "inherit",
+                fontSize: "14px",
+              }}
+            >
+              <option value="">All Statuses</option>
+              <option value="DRAFT">DRAFT</option>
+              <option value="CONFIRMED">CONFIRMED</option>
+              <option value="CANCELLED">CANCELLED</option>
+            </select>
+
+            <button type="submit" className="secondary-button" style={{ padding: "8px 16px" }}>
+              Filter
+            </button>
+          </form>
         </div>
 
         {loading ? (
@@ -689,127 +751,142 @@ export const SalesChallans = () => {
             No sales challans found.
           </div>
         ) : (
-          <div className="customer-table-wrapper">
-            <table className="customer-table">
-              <thead>
-                <tr>
-                  <th>Challan</th>
-                  <th>Customer</th>
-                  <th>Quantity</th>
-                  <th>Status</th>
-                  <th>Created By</th>
-                  <th>Date</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
+          <>
+            <div className="customer-table-wrapper">
+              <table className="customer-table">
+                <thead>
+                  <tr>
+                    <th>Challan</th>
+                    <th>Customer</th>
+                    <th>Quantity</th>
+                    <th>Status</th>
+                    <th>Created By</th>
+                    <th>Date</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
 
-              <tbody>
-                {challans.map(
-                  (challan) => (
-                    <tr
-                      key={challan.id}
-                    >
-                      <td>
-                        <strong>
-                          {
-                            challan.challanNumber
-                          }
-                        </strong>
-                      </td>
-
-                      <td>
-                        {
-                          challan.customerName
-                        }
-                      </td>
-
-                      <td>
-                        {
-                          challan.totalQuantity
-                        }
-                      </td>
-
-                      <td>
-                        <span
-                          className={`status-badge ${getStatusClass(
-                            challan.status,
-                          )}`}
-                        >
-                          {
-                            challan.status
-                          }
-                        </span>
-                      </td>
-
-                      <td>
-                        {
-                          challan.createdByName
-                        }
-                      </td>
-
-                      <td>
-                        {new Date(
-                          challan.createdAt,
-                        ).toLocaleString()}
-                      </td>
-
-                      <td>
-                        <div className="table-actions">
-                          <button
-                            type="button"
-                            className="secondary-button"
-                            onClick={() =>
-                              handleView(
-                                challan.id,
-                              )
+                <tbody>
+                  {challans.map(
+                    (challan) => (
+                      <tr
+                        key={challan.id}
+                      >
+                        <td>
+                          <strong>
+                            {
+                              challan.challanNumber
                             }
+                          </strong>
+                        </td>
+
+                        <td>
+                          {
+                            challan.customerName
+                          }
+                        </td>
+
+                        <td>
+                          {
+                            challan.totalQuantity
+                          }
+                        </td>
+
+                        <td>
+                          <span
+                            className={`status-badge ${getStatusClass(
+                              challan.status,
+                            )}`}
                           >
-                            View
-                          </button>
+                            {
+                              challan.status
+                            }
+                          </span>
+                        </td>
 
-                          {canManage &&
-                            challan.status ===
-                              "DRAFT" && (
-                              <>
-                                <button
-                                  type="button"
-                                  className="primary-button"
-                                  disabled={
-                                    saving
-                                  }
-                                  onClick={() =>
-                                    handleConfirm(
-                                      challan.id,
-                                    )
-                                  }
-                                >
-                                  Confirm
-                                </button>
+                        <td>
+                          {
+                            challan.createdByName
+                          }
+                        </td>
 
-                                <button
-                                  type="button"
-                                  className="danger-button"
-                                  disabled={
-                                    saving
-                                  }
-                                  onClick={() =>
-                                    handleCancel(
-                                      challan.id,
-                                    )
-                                  }
-                                >
-                                  Cancel
-                                </button>
-                              </>
-                            )}
-                        </div>
-                      </td>
-                    </tr>
-                  ),
-                )}
-              </tbody>
-            </table>
-          </div>
+                        <td>
+                          {new Date(
+                            challan.createdAt,
+                          ).toLocaleString()}
+                        </td>
+
+                        <td>
+                          <div className="table-actions">
+                            <button
+                              type="button"
+                              className="secondary-button"
+                              onClick={() =>
+                                handleView(
+                                  challan.id,
+                                )
+                              }
+                            >
+                              View
+                            </button>
+
+                            {canManage &&
+                              challan.status ===
+                                "DRAFT" && (
+                                <>
+                                  <button
+                                    type="button"
+                                    className="primary-button"
+                                    disabled={
+                                      saving
+                                    }
+                                    onClick={() =>
+                                      handleConfirm(
+                                        challan.id,
+                                      )
+                                    }
+                                  >
+                                    Confirm
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    className="danger-button"
+                                    disabled={
+                                      saving
+                                    }
+                                    onClick={() =>
+                                      handleCancel(
+                                        challan.id,
+                                      )
+                                    }
+                                  >
+                                    Cancel
+                                  </button>
+                                </>
+                              )}
+                          </div>
+                        </td>
+                      </tr>
+                    ),
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            <PaginationControls
+              pagination={pagination}
+              onPageChange={(newPage) => {
+                setPage(newPage);
+                loadChallans(newPage, limit, search, statusFilter);
+              }}
+              onLimitChange={(newLimit) => {
+                setLimit(newLimit);
+                setPage(1);
+                loadChallans(1, newLimit, search, statusFilter);
+              }}
+            />
+          </>
         )}
       </div>
 

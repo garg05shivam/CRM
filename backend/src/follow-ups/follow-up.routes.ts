@@ -6,6 +6,7 @@ import {
 import {
   create,
   list,
+  listAll,
   remove,
   update,
 } from "./follow-up.controller.js";
@@ -13,6 +14,16 @@ import {
 const router = Router();
 
 router.use(authenticate);
+
+router.get(
+  "/follow-ups",
+  authorizeRoles(
+    "ADMIN",
+    "SALES",
+    "ACCOUNTS",
+  ),
+  listAll,
+);
 
 router.post(
   "/customers/:customerId/follow-ups",

@@ -60,11 +60,33 @@ export const list = async (
       ? req.query.search.trim()
       : undefined;
 
-  const products = await getProducts(search);
+  const category =
+    typeof req.query.category === "string"
+      ? req.query.category.trim()
+      : undefined;
+
+  const warehouseId =
+    typeof req.query.warehouseId === "string"
+      ? req.query.warehouseId.trim()
+      : undefined;
+
+  const page = req.query.page ? Number.parseInt(String(req.query.page), 10) : 1;
+  const limit = req.query.limit ? Number.parseInt(String(req.query.limit), 10) : 10;
+  const unpaginated = req.query.unpaginated === "true";
+
+  const result = await getProducts({
+    search,
+    category,
+    warehouseId,
+    page,
+    limit,
+    unpaginated,
+  });
 
   res.status(200).json({
     success: true,
-    data: products,
+    data: result.data,
+    pagination: result.pagination,
   });
 };
 

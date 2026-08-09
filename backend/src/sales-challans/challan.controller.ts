@@ -63,14 +63,47 @@ export const create = async (
 };
 
 export const list = async (
-  _req: Request,
+  req: Request,
   res: Response,
 ): Promise<void> => {
-  const challans = await getChallans();
+  const search =
+    typeof req.query.search === "string"
+      ? req.query.search.trim()
+      : undefined;
+
+  const status =
+    typeof req.query.status === "string"
+      ? req.query.status.trim()
+      : undefined;
+
+  const startDate =
+    typeof req.query.startDate === "string"
+      ? req.query.startDate.trim()
+      : undefined;
+
+  const endDate =
+    typeof req.query.endDate === "string"
+      ? req.query.endDate.trim()
+      : undefined;
+
+  const page = req.query.page ? Number.parseInt(String(req.query.page), 10) : 1;
+  const limit = req.query.limit ? Number.parseInt(String(req.query.limit), 10) : 10;
+  const unpaginated = req.query.unpaginated === "true";
+
+  const result = await getChallans({
+    search,
+    status,
+    startDate,
+    endDate,
+    page,
+    limit,
+    unpaginated,
+  });
 
   res.status(200).json({
     success: true,
-    data: challans,
+    data: result.data,
+    pagination: result.pagination,
   });
 };
 

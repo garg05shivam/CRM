@@ -8,17 +8,35 @@ import type {
   DeleteProductResponse,
 } from "../types/product";
 
+export interface GetProductsParams {
+  search?: string;
+  category?: string;
+  warehouseId?: string;
+  page?: number;
+  limit?: number;
+  unpaginated?: boolean;
+}
+
 export const getProducts = (
-  search?: string,
+  params?: string | GetProductsParams,
 ) => {
-  const query = search?.trim()
-    ? `?search=${encodeURIComponent(
-        search.trim(),
-      )}`
-    : "";
+  const queryParams = new URLSearchParams();
+
+  if (typeof params === "string") {
+    if (params.trim()) queryParams.append("search", params.trim());
+  } else if (params) {
+    if (params.search?.trim()) queryParams.append("search", params.search.trim());
+    if (params.category) queryParams.append("category", params.category);
+    if (params.warehouseId) queryParams.append("warehouseId", params.warehouseId);
+    if (params.page) queryParams.append("page", String(params.page));
+    if (params.limit) queryParams.append("limit", String(params.limit));
+    if (params.unpaginated) queryParams.append("unpaginated", "true");
+  }
+
+  const queryStr = queryParams.toString() ? `?${queryParams.toString()}` : "";
 
   return apiRequest<ProductsResponse>(
-    `/products${query}`,
+    `/products${queryStr}`,
   );
 };
 

@@ -20,7 +20,6 @@ import userRoutes from "./users/user.routes.js";
 
 
 const app = express();
-app.use(express.json());
 
 app.use(helmet());
 app.use(cors());
@@ -29,8 +28,8 @@ app.use(express.json());
 app.use("/auth", authRoutes);
 app.use("/protected", protectedRoutes);
 app.use("/users", userRoutes);
-app.use("/customers", customerRoutes);
 app.use(followUpRoutes);
+app.use("/customers", customerRoutes);
 app.use("/products", productRoutes);
 app.use("/warehouses", warehouseRoutes);
 app.use("/inventory", inventoryRoutes);

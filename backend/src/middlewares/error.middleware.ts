@@ -45,6 +45,35 @@ export const errorHandler: ErrorRequestHandler = (
     return;
   }
 
+  // Handle PostgreSQL constraint errors
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error
+  ) {
+    const pgErr = error as { code: string; detail?: string; constraint?: string };
+
+    if (pgErr.code === "23505") {
+      res.status(409).json({
+        success: false,
+        message: "A record with this unique information already exists.",
+        code: "DUPLICATE_ENTRY",
+      });
+
+      return;
+    }
+
+    if (pgErr.code === "23503") {
+      res.status(400).json({
+        success: false,
+        message: "Cannot complete operation as this item is referenced by other records.",
+        code: "FOREIGN_KEY_VIOLATION",
+      });
+
+      return;
+    }
+  }
+
   res.status(500).json({
     success: false,
     message: "Internal server error",

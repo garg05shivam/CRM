@@ -22,6 +22,8 @@ import type {
 } from "../types/product";
 
 import type { Warehouse } from "../types/warehouse";
+import { PaginationControls } from "../components/PaginationControls";
+import type { PaginationMeta } from "../types/pagination";
 
 export const Products = () => {
   const { user } = useAuth();
@@ -34,6 +36,18 @@ export const Products = () => {
 
   const [search, setSearch] =
     useState("");
+
+  const [warehouseFilter, setWarehouseFilter] =
+    useState("");
+
+  const [page, setPage] =
+    useState(1);
+
+  const [limit, setLimit] =
+    useState(10);
+
+  const [pagination, setPagination] =
+    useState<PaginationMeta | undefined>();
 
   const [loading, setLoading] =
     useState(true);
@@ -70,15 +84,36 @@ export const Products = () => {
     });
 
   const loadProducts = useCallback(
-    async (value?: string) => {
+    async (options?: string | { page?: number; limit?: number; search?: string; warehouseId?: string }) => {
       try {
         setLoading(true);
         setError("");
 
+        let currentPage = page;
+        let currentLimit = limit;
+        let currentSearch = search;
+        let currentWarehouse = warehouseFilter;
+
+        if (typeof options === "string") {
+          currentSearch = options;
+          currentPage = 1;
+        } else if (options) {
+          if (options.page !== undefined) currentPage = options.page;
+          if (options.limit !== undefined) currentLimit = options.limit;
+          if (options.search !== undefined) currentSearch = options.search;
+          if (options.warehouseId !== undefined) currentWarehouse = options.warehouseId;
+        }
+
         const response =
-          await getProducts(value);
+          await getProducts({
+            search: currentSearch || undefined,
+            warehouseId: currentWarehouse || undefined,
+            page: currentPage,
+            limit: currentLimit,
+          });
 
         setProducts(response.data);
+        setPagination(response.pagination);
       } catch (error) {
         setError(
           error instanceof Error
@@ -89,7 +124,7 @@ export const Products = () => {
         setLoading(false);
       }
     },
-    [],
+    [page, limit, search, warehouseFilter],
   );
 
   const loadWarehouses =
@@ -118,17 +153,14 @@ export const Products = () => {
       await loadProducts();
       await loadWarehouses();
     })();
-  }, [
-    loadProducts,
-    loadWarehouses,
-  ]);
+  }, [loadProducts, loadWarehouses]);
 
   const handleSearch = (
     event: React.FormEvent,
   ) => {
     event.preventDefault();
-
-    loadProducts(search);
+    setPage(1);
+    loadProducts({ page: 1, limit, search, warehouseId: warehouseFilter });
   };
 
   const handleChange = (
@@ -558,11 +590,12 @@ export const Products = () => {
           </form>
         )}
 
-      {/* Search */}
+      {/* Search & Filters */}
 
       <form
         className="customer-search"
         onSubmit={handleSearch}
+        style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}
       >
         <input
           type="text"
@@ -573,7 +606,25 @@ export const Products = () => {
             )
           }
           placeholder="Search by product, SKU or category"
+          style={{ flex: 1, minWidth: "200px" }}
         />
+
+        <select
+          value={warehouseFilter}
+          onChange={(e) => {
+            setWarehouseFilter(e.target.value);
+            setPage(1);
+            loadProducts({ page: 1, limit, search, warehouseId: e.target.value });
+          }}
+          style={{ padding: "8px 12px", borderRadius: "6px", border: "1px solid rgba(255,255,255,0.15)", background: "var(--input-bg, #0f131d)", color: "inherit" }}
+        >
+          <option value="">All Warehouses</option>
+          {warehouses.map((w) => (
+            <option key={w.id} value={w.id}>
+              {w.name}
+            </option>
+          ))}
+        </select>
 
         <button type="submit">
           Search
@@ -599,171 +650,163 @@ export const Products = () => {
       {/* Product Table */}
 
       {!loading && !error && (
-        <div className="customer-table-wrapper">
-          <table className="customer-table">
-            <thead>
-              <tr>
-                <th>Product</th>
-                <th>SKU</th>
-                <th>Category</th>
-                <th>Price</th>
-                <th>Stock</th>
-                <th>Min Stock</th>
-                <th>Warehouse</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {products.length ===
-              0 ? (
+        <>
+          <div className="customer-table-wrapper">
+            <table className="customer-table">
+              <thead>
                 <tr>
-                  <td
-                    colSpan={9}
-                    className="empty-state"
-                  >
-                    No products found.
-                  </td>
+                  <th>Product</th>
+                  <th>SKU</th>
+                  <th>Category</th>
+                  <th>Price</th>
+                  <th>Stock</th>
+                  <th>Min Stock</th>
+                  <th>Warehouse</th>
+                  <th>Status</th>
+                  <th>Actions</th>
                 </tr>
-              ) : (
-                products.map(
-                  (product) => (
-                    <tr
-                      key={
-                        product.id
-                      }
+              </thead>
+
+              <tbody>
+                {products.length ===
+                0 ? (
+                  <tr>
+                    <td
+                      colSpan={9}
+                      className="empty-state"
                     >
-                      <td>
-                        {
-                          product.productName
-                        }
-                      </td>
+                      No products found.
+                    </td>
+                  </tr>
+                ) : (
+                  products.map(
+                    (product) => (
+                      <tr key={product.id}>
+                        <td>
+                          {product.productName}
+                        </td>
 
-                      <td>
-                        {product.sku}
-                      </td>
+                        <td>{product.sku}</td>
 
-                      <td>
-                        {
-                          product.category
-                        }
-                      </td>
+                        <td>
+                          {product.category}
+                        </td>
 
-                      <td>
-                        ₹
-                        {Number(
-                          product.unitPrice,
-                        ).toFixed(2)}
-                      </td>
+                        <td>
+                          ₹
+                          {product.unitPrice.toLocaleString()}
+                        </td>
 
-                      <td>
-                        <strong
-                          className={
-                            product.currentStock <=
-                            product.minimumStockQuantity
-                              ? "stock-low"
-                              : ""
-                          }
-                        >
+                        <td>
+                          {product.currentStock}
+                        </td>
+
+                        <td>
                           {
-                            product.currentStock
+                            product.minimumStockQuantity
                           }
-                        </strong>
-                      </td>
+                        </td>
 
-                      <td>
-                        {
-                          product.minimumStockQuantity
-                        }
-                      </td>
+                        <td>
+                          {
+                            product.warehouseName
+                          }
+                        </td>
 
-                      <td>
-                        {
-                          product.warehouseName
-                        }
-                      </td>
-
-                      <td>
-                        <span
-                          className={`status-badge ${
-                            product.isActive
-                              ? "status-active"
-                              : "status-inactive"
-                          }`}
-                        >
-                          {product.isActive
-                            ? "ACTIVE"
-                            : "INACTIVE"}
-                        </span>
-                      </td>
-
-                      <td>
-                        <div className="customer-actions">
-                          <button
-                            type="button"
-                            className="table-button"
-                            onClick={() =>
-                              handleView(
-                                product.id,
-                              )
-                            }
+                        <td>
+                          <span
+                            className={`status-badge ${
+                              product.isActive
+                                ? "status-active"
+                                : "status-inactive"
+                            }`}
                           >
-                            View
-                          </button>
+                            {product.isActive
+                              ? "ACTIVE"
+                              : "INACTIVE"}
+                          </span>
+                        </td>
 
-                          {canManageProducts && (
+                        <td>
+                          <div className="customer-actions">
                             <button
                               type="button"
                               className="table-button"
                               onClick={() =>
-                                handleEdit(
-                                  product,
+                                handleView(
+                                  product.id,
                                 )
                               }
                             >
-                              Edit
+                              View
                             </button>
-                          )}
 
-                          {canManageProducts && (
-                            <button
-                              type="button"
-                              className="table-button"
-                              onClick={() =>
-                                handleToggleActive(
-                                  product,
-                                )
-                              }
-                            >
-                              {product.isActive
-                                ? "Deactivate"
-                                : "Activate"}
-                            </button>
-                          )}
+                            {canManageProducts && (
+                              <button
+                                type="button"
+                                className="table-button"
+                                onClick={() =>
+                                  handleEdit(
+                                    product,
+                                  )
+                                }
+                              >
+                                Edit
+                              </button>
+                            )}
 
-                          {canDeleteProducts && (
-                            <button
-                              type="button"
-                              className="table-button table-button-danger"
-                              onClick={() =>
-                                handleDelete(
-                                  product,
-                                )
-                              }
-                            >
-                              Delete
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ),
-                )
-              )}
-            </tbody>
-          </table>
-        </div>
+                            {canManageProducts && (
+                              <button
+                                type="button"
+                                className="table-button"
+                                onClick={() =>
+                                  handleToggleActive(
+                                    product,
+                                  )
+                                }
+                              >
+                                {product.isActive
+                                  ? "Deactivate"
+                                  : "Activate"}
+                              </button>
+                            )}
+
+                            {canDeleteProducts && (
+                              <button
+                                type="button"
+                                className="table-button table-button-danger"
+                                onClick={() =>
+                                  handleDelete(
+                                    product,
+                                  )
+                                }
+                              >
+                                Delete
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ),
+                  )
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          <PaginationControls
+            pagination={pagination}
+            onPageChange={(newPage) => {
+              setPage(newPage);
+              loadProducts({ page: newPage, limit, search, warehouseId: warehouseFilter });
+            }}
+            onLimitChange={(newLimit) => {
+              setLimit(newLimit);
+              setPage(1);
+              loadProducts({ page: 1, limit: newLimit, search, warehouseId: warehouseFilter });
+            }}
+          />
+        </>
       )}
 
       {/* Product Details */}

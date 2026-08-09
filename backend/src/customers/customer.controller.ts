@@ -62,11 +62,33 @@ export const list = async (
       ? req.query.search.trim()
       : undefined;
 
-  const customers = await getCustomers(search);
+  const status =
+    typeof req.query.status === "string" && req.query.status
+      ? (req.query.status as any)
+      : undefined;
+
+  const customerType =
+    typeof req.query.customerType === "string" && req.query.customerType
+      ? (req.query.customerType as any)
+      : undefined;
+
+  const page = req.query.page ? Number.parseInt(String(req.query.page), 10) : 1;
+  const limit = req.query.limit ? Number.parseInt(String(req.query.limit), 10) : 10;
+  const unpaginated = req.query.unpaginated === "true";
+
+  const result = await getCustomers({
+    search,
+    status,
+    customerType,
+    page,
+    limit,
+    unpaginated,
+  });
 
   res.status(200).json({
     success: true,
-    data: customers,
+    data: result.data,
+    pagination: result.pagination,
   });
 };
 

@@ -205,3 +205,55 @@ export const deleteFollowUp = async (
 
   return result.rows[0];
 };
+
+export const getAllFollowUps = async (
+  search?: string,
+  date?: string,
+) => {
+  const values: unknown[] = [];
+  const conditions: string[] = [];
+  let paramIdx = 1;
+
+  if (search) {
+    conditions.push(
+      `(c.customer_name ILIKE $${paramIdx} OR c.business_name ILIKE $${paramIdx} OR f.note ILIKE $${paramIdx})`,
+    );
+    values.push(`%${search}%`);
+    paramIdx++;
+  }
+
+  if (date) {
+    conditions.push(`f.follow_up_date = $${paramIdx}::date`);
+    values.push(date);
+    paramIdx++;
+  }
+
+  const whereClause =
+    conditions.length > 0
+      ? `WHERE ${conditions.join(" AND ")}`
+      : "";
+
+  const result = await pool.query(
+    `
+      SELECT
+        f.id,
+        f.customer_id AS "customerId",
+        c.customer_name AS "customerName",
+        c.business_name AS "businessName",
+        c.mobile_number AS "mobileNumber",
+        f.note,
+        f.follow_up_date AS "followUpDate",
+        f.created_by AS "createdBy",
+        u.name AS "createdByName",
+        f.created_at AS "createdAt"
+      FROM customer_follow_ups f
+      INNER JOIN customers c ON c.id = f.customer_id
+      INNER JOIN users u ON u.id = f.created_by
+      ${whereClause}
+      ORDER BY f.follow_up_date ASC, f.created_at DESC
+    `,
+    values,
+  );
+
+  return result.rows;
+};

@@ -43,7 +43,7 @@ const seedUsers = async (): Promise<void> => {
             password_hash,
             role
           )
-          VALUES ($1, $2, $3, $4)
+          VALUES ($1, $2, $3, $4::user_role)
           ON CONFLICT (email)
           DO UPDATE SET
             name = EXCLUDED.name,

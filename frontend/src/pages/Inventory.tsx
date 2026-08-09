@@ -21,6 +21,8 @@ import type {
 } from "../types/inventory";
 
 import type { Product } from "../types/product";
+import { PaginationControls } from "../components/PaginationControls";
+import type { PaginationMeta } from "../types/pagination";
 
 export const Inventory = () => {
   const { user } = useAuth();
@@ -36,6 +38,12 @@ export const Inventory = () => {
   const [lowStock, setLowStock] = useState<
     LowStockProduct[]
   >([]);
+
+  const [search, setSearch] = useState("");
+  const [filterType, setFilterType] = useState<"IN" | "OUT" | "">("");
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [pagination, setPagination] = useState<PaginationMeta | undefined>();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -54,40 +62,54 @@ export const Inventory = () => {
     user?.role === "ADMIN" ||
     user?.role === "WAREHOUSE";
 
-  const loadInventory = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError("");
+  const loadMovements = useCallback(
+    async (currentPage = page, currentLimit = limit, currentSearch = search, currentMovementType = filterType) => {
+      try {
+        setLoading(true);
+        setError("");
 
-      const [
-        productsResponse,
-        movementsResponse,
-        lowStockResponse,
-      ] = await Promise.all([
-        getProducts(),
-        getStockMovements(),
+        const movementsResponse = await getStockMovements({
+          search: currentSearch || undefined,
+          movementType: currentMovementType || undefined,
+          page: currentPage,
+          limit: currentLimit,
+        });
+
+        setMovements(movementsResponse.data);
+        setPagination(movementsResponse.pagination);
+      } catch (error) {
+        setError(
+          error instanceof Error
+            ? error.message
+            : "Failed to load stock movements",
+        );
+      } finally {
+        setLoading(false);
+      }
+    },
+    [page, limit, search, filterType],
+  );
+
+  const loadInitialData = useCallback(async () => {
+    try {
+      const [productsResponse, lowStockResponse] = await Promise.all([
+        getProducts({ unpaginated: true }),
         getLowStockProducts(),
       ]);
 
       setProducts(productsResponse.data);
-      setMovements(movementsResponse.data);
       setLowStock(lowStockResponse.data);
     } catch (error) {
-      setError(
-        error instanceof Error
-          ? error.message
-          : "Failed to load inventory",
-      );
-    } finally {
-      setLoading(false);
+      console.error("Failed to load products/low stock:", error);
     }
   }, []);
 
   useEffect(() => {
     (async () => {
-      await loadInventory();
+      await loadMovements(page, limit, search, filterType);
+      await loadInitialData();
     })();
-  }, [loadInventory]);
+  }, [page, limit, filterType]);
 
   const handleMovement = async (
     event: React.FormEvent,
@@ -130,7 +152,8 @@ export const Inventory = () => {
       setReason("");
       setMovementType("IN");
 
-      await loadInventory();
+      await loadMovements();
+      await loadInitialData();
     } catch (error) {
       const message =
         error instanceof Error
@@ -394,7 +417,7 @@ export const Inventory = () => {
       {/* Movement History */}
 
       <div className="inventory-section">
-        <div className="section-header">
+        <div className="section-header" style={{ flexWrap: "wrap", gap: "16px" }}>
           <div>
             <h2>Movement History</h2>
             <p>
@@ -402,9 +425,55 @@ export const Inventory = () => {
             </p>
           </div>
 
-          <strong>
-            {movements.length}
-          </strong>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              setPage(1);
+              loadMovements(1, limit, search, filterType);
+            }}
+            style={{ display: "flex", gap: "10px", alignItems: "center" }}
+          >
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search product, SKU, reason or user"
+              style={{
+                padding: "8px 12px",
+                borderRadius: "6px",
+                border: "1px solid rgba(255,255,255,0.15)",
+                background: "var(--input-bg, #0f131d)",
+                color: "inherit",
+                fontSize: "14px",
+              }}
+            />
+
+            <select
+              value={filterType}
+              onChange={(e) => {
+                const val = e.target.value as "IN" | "OUT" | "";
+                setFilterType(val);
+                setPage(1);
+                loadMovements(1, limit, search, val);
+              }}
+              style={{
+                padding: "8px 12px",
+                borderRadius: "6px",
+                border: "1px solid rgba(255,255,255,0.15)",
+                background: "var(--input-bg, #0f131d)",
+                color: "inherit",
+                fontSize: "14px",
+              }}
+            >
+              <option value="">All Types</option>
+              <option value="IN">IN (+)</option>
+              <option value="OUT">OUT (-)</option>
+            </select>
+
+            <button type="submit" className="secondary-button" style={{ padding: "8px 16px" }}>
+              Filter
+            </button>
+          </form>
         </div>
 
         {loading ? (
@@ -416,72 +485,87 @@ export const Inventory = () => {
             No stock movements yet.
           </div>
         ) : (
-          <div className="customer-table-wrapper">
-            <table className="customer-table">
-              <thead>
-                <tr>
-                  <th>Product</th>
-                  <th>SKU</th>
-                  <th>Type</th>
-                  <th>Quantity</th>
-                  <th>Reason</th>
-                  <th>Created By</th>
-                  <th>Date</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {movements.map((movement) => (
-                  <tr key={movement.id}>
-                    <td>
-                      {movement.productName}
-                    </td>
-
-                    <td>{movement.sku}</td>
-
-                    <td>
-                      <span
-                        className={`status-badge ${
-                          movement.movementType ===
-                          "IN"
-                            ? "status-active"
-                            : "status-inactive"
-                        }`}
-                      >
-                        {movement.movementType}
-                      </span>
-                    </td>
-
-                    <td>
-                      <strong>
-                        {movement.movementType ===
-                        "IN"
-                          ? "+"
-                          : "-"}
-                        {movement.quantity}
-                      </strong>
-                    </td>
-
-                    <td>
-                      {movement.reason}
-                    </td>
-
-                    <td>
-                      {
-                        movement.createdByName
-                      }
-                    </td>
-
-                    <td>
-                      {new Date(
-                        movement.createdAt,
-                      ).toLocaleString()}
-                    </td>
+          <>
+            <div className="customer-table-wrapper">
+              <table className="customer-table">
+                <thead>
+                  <tr>
+                    <th>Product</th>
+                    <th>SKU</th>
+                    <th>Type</th>
+                    <th>Quantity</th>
+                    <th>Reason</th>
+                    <th>Created By</th>
+                    <th>Date</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+
+                <tbody>
+                  {movements.map((movement) => (
+                    <tr key={movement.id}>
+                      <td>
+                        {movement.productName}
+                      </td>
+
+                      <td>{movement.sku}</td>
+
+                      <td>
+                        <span
+                          className={`status-badge ${
+                            movement.movementType ===
+                            "IN"
+                              ? "status-active"
+                              : "status-inactive"
+                          }`}
+                        >
+                          {movement.movementType}
+                        </span>
+                      </td>
+
+                      <td>
+                        <strong>
+                          {movement.movementType ===
+                          "IN"
+                            ? "+"
+                            : "-"}
+                          {movement.quantity}
+                        </strong>
+                      </td>
+
+                      <td>
+                        {movement.reason}
+                      </td>
+
+                      <td>
+                        {
+                          movement.createdByName
+                        }
+                      </td>
+
+                      <td>
+                        {new Date(
+                          movement.createdAt,
+                        ).toLocaleString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <PaginationControls
+              pagination={pagination}
+              onPageChange={(newPage) => {
+                setPage(newPage);
+                loadMovements(newPage, limit, search, filterType);
+              }}
+              onLimitChange={(newLimit) => {
+                setLimit(newLimit);
+                setPage(1);
+                loadMovements(1, newLimit, search, filterType);
+              }}
+            />
+          </>
         )}
       </div>
     </div>

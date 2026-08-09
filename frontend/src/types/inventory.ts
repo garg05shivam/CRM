@@ -45,9 +45,12 @@ export interface StockMovementResponse {
   };
 }
 
+import type { PaginationMeta } from "./pagination";
+
 export interface StockMovementsResponse {
   success: boolean;
   data: StockMovement[];
+  pagination?: PaginationMeta;
 }
 
 export interface LowStockResponse {

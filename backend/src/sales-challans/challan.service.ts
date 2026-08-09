@@ -217,30 +217,102 @@ export const createChallan = async (
   }
 };
 
-export const getChallans = async () => {
-  const result = await pool.query(
-    `
-      SELECT
-        sc.id,
-        sc.challan_number AS "challanNumber",
-        sc.customer_id AS "customerId",
-        c.customer_name AS "customerName",
-        sc.total_quantity AS "totalQuantity",
-        sc.status,
-        sc.created_by AS "createdBy",
-        u.name AS "createdByName",
-        sc.created_at AS "createdAt",
-        sc.updated_at AS "updatedAt"
-      FROM sales_challans sc
-      INNER JOIN customers c
-        ON c.id = sc.customer_id
-      INNER JOIN users u
-        ON u.id = sc.created_by
-      ORDER BY sc.created_at DESC
-    `,
-  );
+export interface GetChallansFilter {
+  search?: string;
+  status?: string;
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  limit?: number;
+  unpaginated?: boolean;
+}
 
-  return result.rows;
+export const getChallans = async (
+  options: GetChallansFilter = {},
+) => {
+  const { search, status, startDate, endDate, page = 1, limit = 10, unpaginated } = options;
+
+  const conditions: string[] = [];
+  const params: unknown[] = [];
+  let paramIndex = 1;
+
+  if (search && search.trim() !== "") {
+    conditions.push(
+      `(sc.challan_number ILIKE $${paramIndex} OR c.customer_name ILIKE $${paramIndex})`,
+    );
+    params.push(`%${search.trim()}%`);
+    paramIndex += 1;
+  }
+
+  if (status && status.trim() !== "") {
+    conditions.push(`sc.status = $${paramIndex}::challan_status`);
+    params.push(status.trim());
+    paramIndex += 1;
+  }
+
+  if (startDate && startDate.trim() !== "") {
+    conditions.push(`sc.created_at >= $${paramIndex}::timestamptz`);
+    params.push(startDate.trim());
+    paramIndex += 1;
+  }
+
+  if (endDate && endDate.trim() !== "") {
+    conditions.push(`sc.created_at <= $${paramIndex}::timestamptz`);
+    params.push(endDate.trim());
+    paramIndex += 1;
+  }
+
+  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+
+  const countQuery = `
+    SELECT COUNT(*)::integer AS total
+    FROM sales_challans sc
+    INNER JOIN customers c ON c.id = sc.customer_id
+    ${whereClause}
+  `;
+  const countResult = await pool.query(countQuery, params);
+  const total = countResult.rows[0]?.total ?? 0;
+
+  let query = `
+    SELECT
+      sc.id,
+      sc.challan_number AS "challanNumber",
+      sc.customer_id AS "customerId",
+      c.customer_name AS "customerName",
+      sc.total_quantity AS "totalQuantity",
+      sc.status,
+      sc.created_by AS "createdBy",
+      u.name AS "createdByName",
+      sc.created_at AS "createdAt",
+      sc.updated_at AS "updatedAt"
+    FROM sales_challans sc
+    INNER JOIN customers c
+      ON c.id = sc.customer_id
+    INNER JOIN users u
+      ON u.id = sc.created_by
+    ${whereClause}
+    ORDER BY sc.created_at DESC
+  `;
+
+  if (!unpaginated) {
+    const offset = (Math.max(1, page) - 1) * Math.max(1, limit);
+    query += ` LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+    params.push(limit, offset);
+  }
+
+  const result = await pool.query(query, params);
+
+  const totalPages = Math.ceil(total / Math.max(1, limit)) || 1;
+
+  return {
+    data: result.rows,
+    pagination: {
+      total,
+      page,
+      limit,
+      totalPages,
+    },
+  };
 };
 
 export const getChallanById = async (
