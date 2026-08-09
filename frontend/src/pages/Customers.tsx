@@ -567,6 +567,9 @@ export const Customers = () => {
               Customer Name *
               <input
                 required
+                minLength={2}
+                maxLength={150}
+                placeholder="ABC Retail Store"
                 value={form.customerName}
                 onChange={(event) =>
                   handleChange(
@@ -581,6 +584,9 @@ export const Customers = () => {
               Mobile Number *
               <input
                 required
+                minLength={7}
+                maxLength={20}
+                placeholder="e.g. 9876543210"
                 value={form.mobileNumber}
                 onChange={(event) =>
                   handleChange(
@@ -595,6 +601,8 @@ export const Customers = () => {
               Email
               <input
                 type="email"
+                maxLength={255}
+                placeholder="name@example.com"
                 value={form.email ?? ""}
                 onChange={(event) =>
                   handleChange(
@@ -609,6 +617,9 @@ export const Customers = () => {
               Business Name *
               <input
                 required
+                minLength={2}
+                maxLength={200}
+                placeholder="Company / Business Name"
                 value={form.businessName}
                 onChange={(event) =>
                   handleChange(
@@ -622,6 +633,8 @@ export const Customers = () => {
             <label>
               GST Number
               <input
+                maxLength={30}
+                placeholder="GSTIN (optional)"
                 value={form.gstNumber ?? ""}
                 onChange={(event) =>
                   handleChange(
@@ -697,9 +710,12 @@ export const Customers = () => {
             </label>
 
             <label className="form-full">
-              Address *
+              Address * (min 5 characters)
               <textarea
                 required
+                minLength={5}
+                maxLength={1000}
+                placeholder="Enter complete address (at least 5 characters)"
                 value={form.address}
                 onChange={(event) =>
                   handleChange(
@@ -713,6 +729,8 @@ export const Customers = () => {
             <label className="form-full">
               Notes
               <textarea
+                maxLength={2000}
+                placeholder="Additional notes (optional)"
                 value={form.notes ?? ""}
                 onChange={(event) =>
                   handleChange(

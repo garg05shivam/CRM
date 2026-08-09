@@ -34,10 +34,36 @@ export const apiRequest = async <T>(
   const data = await response.json();
 
   if (!response.ok) {
-    throw new Error(
+    let message =
       data.message ||
-        "Something went wrong",
-    );
+      "Something went wrong";
+
+    if (
+      data.errors &&
+      typeof data.errors === "object"
+    ) {
+      const details = Object.entries(
+        data.errors,
+      )
+        .map(([field, errs]) => {
+          const formattedField = field
+            .replace(/([A-Z])/g, " $1")
+            .toLowerCase();
+
+          const msgs = Array.isArray(errs)
+            ? errs.join(", ")
+            : String(errs);
+
+          return `${formattedField}: ${msgs}`;
+        })
+        .join("; ");
+
+      if (details) {
+        message = `${message} — ${details}`;
+      }
+    }
+
+    throw new Error(message);
   }
 
   return data;
