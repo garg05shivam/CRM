@@ -136,7 +136,8 @@ export const Products = () => {
         setWarehouses(
           response.data.filter(
             (warehouse) =>
-              warehouse.isActive,
+              warehouse.isActive ??
+              warehouse.is_active,
           ),
         );
       } catch (error) {
