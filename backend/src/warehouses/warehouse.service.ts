@@ -19,9 +19,9 @@ export const createWarehouse = async (
         id,
         name,
         location,
-        is_active,
-        created_at,
-        updated_at
+        is_active AS "isActive",
+        created_at AS "createdAt",
+        updated_at AS "updatedAt"
     `,
     [data.name, data.location],
   );
@@ -36,9 +36,9 @@ export const getWarehouses = async () => {
         id,
         name,
         location,
-        is_active,
-        created_at,
-        updated_at
+        is_active AS "isActive",
+        created_at AS "createdAt",
+        updated_at AS "updatedAt"
       FROM warehouses
       ORDER BY created_at DESC
     `,
@@ -56,9 +56,9 @@ export const getWarehouseById = async (
         id,
         name,
         location,
-        is_active,
-        created_at,
-        updated_at
+        is_active AS "isActive",
+        created_at AS "createdAt",
+        updated_at AS "updatedAt"
       FROM warehouses
       WHERE id = $1
     `,
@@ -118,9 +118,9 @@ export const updateWarehouse = async (
         id,
         name,
         location,
-        is_active,
-        created_at,
-        updated_at
+        is_active AS "isActive",
+        created_at AS "createdAt",
+        updated_at AS "updatedAt"
     `,
     values,
   );
