@@ -415,7 +415,7 @@ export const Products = () => {
         )}
       </div>
 
-      {/* Product Form */}
+      }
 
       {showForm &&
         canManageProducts && (
@@ -590,7 +590,7 @@ export const Products = () => {
           </form>
         )}
 
-      {/* Search & Filters */}
+      }
 
       <form
         className="customer-search"
@@ -631,7 +631,7 @@ export const Products = () => {
         </button>
       </form>
 
-      {/* Loading */}
+      }
 
       {loading && (
         <div className="page-message">
@@ -639,7 +639,7 @@ export const Products = () => {
         </div>
       )}
 
-      {/* Error */}
+      }
 
       {error && (
         <div className="page-error">
@@ -647,7 +647,7 @@ export const Products = () => {
         </div>
       )}
 
-      {/* Product Table */}
+      }
 
       {!loading && !error && (
         <>
@@ -809,7 +809,7 @@ export const Products = () => {
         </>
       )}
 
-      {/* Product Details */}
+      }
 
       {showDetails &&
         selectedProduct && (

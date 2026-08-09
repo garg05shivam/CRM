@@ -45,7 +45,7 @@ export const errorHandler: ErrorRequestHandler = (
     return;
   }
 
-  // Handle PostgreSQL constraint errors
+
   if (
     typeof error === "object" &&
     error !== null &&

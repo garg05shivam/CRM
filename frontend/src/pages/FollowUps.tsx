@@ -233,7 +233,7 @@ export const FollowUps = () => {
       {error && <div className="page-error">{error}</div>}
       {success && <div className="page-success">{success}</div>}
 
-      {/* Add / Edit Form */}
+      }
       {showForm && canManage && (
         <form
           className="customer-form"
@@ -315,7 +315,7 @@ export const FollowUps = () => {
         </form>
       )}
 
-      {/* Filters and Search */}
+      }
       <div className="customer-toolbar" style={{ marginTop: "20px" }}>
         <form onSubmit={handleSearch} className="search-form">
           <input
@@ -355,7 +355,7 @@ export const FollowUps = () => {
         </div>
       </div>
 
-      {/* Table */}
+      }
       <div className="inventory-section">
         {loading ? (
           <div className="page-message">Loading follow-ups...</div>

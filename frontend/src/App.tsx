@@ -22,23 +22,23 @@ import { AppLayout } from "./layouts/AppLayout";
 function App() {
   return (
     <Routes>
-      {/* Public routes */}
+      }
       <Route
         path="/login"
         element={<Login />}
       />
 
-      {/* Protected routes */}
+      }
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
 
-          {/* Dashboard */}
+          }
           <Route
             path="/dashboard"
             element={<Dashboard />}
           />
 
-          {/* Customers */}
+          }
           <Route
             element={
               <RoleRoute
@@ -56,7 +56,7 @@ function App() {
             />
           </Route>
 
-          {/* Follow-ups */}
+          }
           <Route
             element={
               <RoleRoute
@@ -73,7 +73,7 @@ function App() {
             />
           </Route>
 
-          {/* Products */}
+          }
           <Route
             element={
               <RoleRoute
@@ -92,7 +92,7 @@ function App() {
             />
           </Route>
 
-          {/* Warehouses */}
+          }
           <Route
             element={
               <RoleRoute
@@ -109,7 +109,7 @@ function App() {
             />
           </Route>
 
-          {/* Inventory */}
+          }
           <Route
             element={
               <RoleRoute
@@ -126,7 +126,7 @@ function App() {
             />
           </Route>
 
-          {/* Sales Challans */}
+          }
           <Route
             element={
               <RoleRoute
@@ -146,7 +146,7 @@ function App() {
             />
           </Route>
 
-          {/* User Management */}
+          }
           <Route
             element={
               <RoleRoute
@@ -163,7 +163,7 @@ function App() {
         </Route>
       </Route>
 
-      {/* Unknown routes */}
+      }
       <Route
         path="*"
         element={

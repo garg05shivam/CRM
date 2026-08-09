@@ -539,7 +539,7 @@ export const Customers = () => {
         </button>
       </div>
 
-      {/* Create / Edit Form */}
+      }
 
       {showForm && (
         <form
@@ -748,7 +748,7 @@ export const Customers = () => {
         </form>
       )}
 
-      {/* Search & Filters */}
+      }
 
       <form
         className="customer-search"
@@ -800,7 +800,7 @@ export const Customers = () => {
         </button>
       </form>
 
-      {/* Loading */}
+      }
 
       {loading && (
         <div className="page-message">
@@ -808,7 +808,7 @@ export const Customers = () => {
         </div>
       )}
 
-      {/* Error */}
+      }
 
       {error && (
         <div className="page-error">
@@ -816,7 +816,7 @@ export const Customers = () => {
         </div>
       )}
 
-      {/* Customer Table */}
+      }
 
       {!loading && !error && (
         <>
@@ -942,7 +942,7 @@ export const Customers = () => {
         </>
       )}
 
-      {/* Customer Details Modal */}
+      }
 
       {showDetails &&
         selectedCustomer && (
