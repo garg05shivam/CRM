@@ -6,22 +6,36 @@ A full-stack Operations Portal built for wholesale and distribution businesses. 
 
 ## Table of Contents
 
-1. [Key Features](#key-features)
-2. [Role-Based Access Control](#role-based-access-control)
-3. [Demo Credentials](#demo-credentials)
-4. [Core Business Workflow](#core-business-workflow)
-5. [Technology Stack](#technology-stack)
-6. [Architecture & Repository Structure](#architecture--repository-structure)
-7. [Database Overview](#database-overview)
-8. [Local Development Setup](#local-development-setup)
-9. [Environment Variables](#environment-variables)
-10. [Testing Checklist](#testing-checklist)
-11. [Security Features](#security-features)
-12. [Deployment Guide](#deployment-guide)
-13. [Known Limitations & Assumptions](#known-limitations--assumptions)
-14. [Project Status](#project-status)
-15. [Future Improvements](#future-improvements)
-16. [License](#license)
+1. [Screenshots](#screenshots)
+2. [Key Features](#key-features)
+3. [Role-Based Access Control](#role-based-access-control)
+4. [Demo Credentials](#demo-credentials)
+5. [Core Business Workflow](#core-business-workflow)
+6. [Technology Stack](#technology-stack)
+7. [Architecture & Repository Structure](#architecture--repository-structure)
+8. [Database Overview](#database-overview)
+9. [Local Development Setup](#local-development-setup)
+10. [Environment Variables](#environment-variables)
+11. [Testing Checklist](#testing-checklist)
+12. [Security Features](#security-features)
+13. [Deployment Guide](#deployment-guide)
+14. [Known Limitations & Assumptions](#known-limitations--assumptions)
+15. [Project Status](#project-status)
+16. [Future Improvements](#future-improvements)
+17. [License](#license)
+
+---
+
+## 📸 Screenshots
+
+### Sign-In Page
+![Sign-In Page](docs/screenshots/sign_in_page.png)
+
+### Admin Dashboard Overview
+![Admin Dashboard](docs/screenshots/admin_dashboard.png)
+
+### Sales Challans & Operations
+![Sales Challans](docs/screenshots/sales_challans.png)
 
 ---
 
