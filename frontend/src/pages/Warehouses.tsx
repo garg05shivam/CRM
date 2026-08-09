@@ -178,8 +178,13 @@ export const Warehouses = () => {
       return;
     }
 
+    const isActive =
+      warehouse.isActive ??
+      warehouse.is_active ??
+      false;
+
     const action =
-      warehouse.isActive
+      isActive
         ? "deactivate"
         : "activate";
 
@@ -201,7 +206,7 @@ export const Warehouses = () => {
         warehouse.id,
         {
           isActive:
-            !warehouse.isActive,
+            !isActive,
         },
       );
 
@@ -432,104 +437,123 @@ export const Warehouses = () => {
 
               <tbody>
                 {warehouses.map(
-                  (warehouse) => (
-                    <tr
-                      key={
-                        warehouse.id
-                      }
-                    >
-                      <td>
-                        <strong>
-                          {
-                            warehouse.name
-                          }
-                        </strong>
-                      </td>
+                  (warehouse) => {
+                    const isActive =
+                      warehouse.isActive ??
+                      warehouse.is_active ??
+                      false;
 
-                      <td>
-                        {
-                          warehouse.location
+                    const rawDate =
+                      warehouse.createdAt ||
+                      warehouse.created_at;
+
+                    const formattedDate =
+                      rawDate &&
+                      !isNaN(
+                        new Date(rawDate).getTime(),
+                      )
+                        ? new Date(
+                            rawDate,
+                          ).toLocaleDateString()
+                        : "N/A";
+
+                    return (
+                      <tr
+                        key={
+                          warehouse.id
                         }
-                      </td>
-
-                      <td>
-                        <span
-                          className={`status-badge ${
-                            warehouse.isActive
-                              ? "status-active"
-                              : "status-inactive"
-                          }`}
-                        >
-                          {warehouse.isActive
-                            ? "ACTIVE"
-                            : "INACTIVE"}
-                        </span>
-                      </td>
-
-                      <td>
-                        {new Date(
-                          warehouse.createdAt,
-                        ).toLocaleDateString()}
-                      </td>
-
-                      {isAdmin && (
+                      >
                         <td>
-                          <div className="table-actions">
-                            <button
-                              type="button"
-                              className="secondary-button"
-                              onClick={() =>
-                                openEdit(
-                                  warehouse,
-                                )
-                              }
-                              disabled={
-                                saving
-                              }
-                            >
-                              Edit
-                            </button>
-
-                            <button
-                              type="button"
-                              className={
-                                warehouse.isActive
-                                  ? "danger-button"
-                                  : "primary-button"
-                              }
-                              onClick={() =>
-                                handleToggleStatus(
-                                  warehouse,
-                                )
-                              }
-                              disabled={
-                                saving
-                              }
-                            >
-                              {warehouse.isActive
-                                ? "Disable"
-                                : "Enable"}
-                            </button>
-
-                            <button
-                              type="button"
-                              className="danger-button"
-                              onClick={() =>
-                                handleDelete(
-                                  warehouse,
-                                )
-                              }
-                              disabled={
-                                saving
-                              }
-                            >
-                              Delete
-                            </button>
-                          </div>
+                          <strong>
+                            {
+                              warehouse.name
+                            }
+                          </strong>
                         </td>
-                      )}
-                    </tr>
-                  ),
+
+                        <td>
+                          {
+                            warehouse.location
+                          }
+                        </td>
+
+                        <td>
+                          <span
+                            className={`status-badge ${
+                              isActive
+                                ? "status-active"
+                                : "status-inactive"
+                            }`}
+                          >
+                            {isActive
+                              ? "ACTIVE"
+                              : "INACTIVE"}
+                          </span>
+                        </td>
+
+                        <td>
+                          {formattedDate}
+                        </td>
+
+                        {isAdmin && (
+                          <td>
+                            <div className="table-actions">
+                              <button
+                                type="button"
+                                className="secondary-button"
+                                onClick={() =>
+                                  openEdit(
+                                    warehouse,
+                                  )
+                                }
+                                disabled={
+                                  saving
+                                }
+                              >
+                                Edit
+                              </button>
+
+                              <button
+                                type="button"
+                                className={
+                                  isActive
+                                    ? "danger-button"
+                                    : "primary-button"
+                                }
+                                onClick={() =>
+                                  handleToggleStatus(
+                                    warehouse,
+                                  )
+                                }
+                                disabled={
+                                  saving
+                                }
+                              >
+                                {isActive
+                                  ? "Disable"
+                                  : "Enable"}
+                              </button>
+
+                              <button
+                                type="button"
+                                className="danger-button"
+                                onClick={() =>
+                                  handleDelete(
+                                    warehouse,
+                                  )
+                                }
+                                disabled={
+                                  saving
+                                }
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </td>
+                        )}
+                      </tr>
+                    );
+                  },
                 )}
               </tbody>
             </table>
