@@ -415,7 +415,7 @@ export const Products = () => {
         )}
       </div>
 
-      }
+      
 
       {showForm &&
         canManageProducts && (
@@ -590,7 +590,7 @@ export const Products = () => {
           </form>
         )}
 
-      }
+      
 
       <form
         className="customer-search"
@@ -631,7 +631,7 @@ export const Products = () => {
         </button>
       </form>
 
-      }
+      
 
       {loading && (
         <div className="page-message">
@@ -639,7 +639,7 @@ export const Products = () => {
         </div>
       )}
 
-      }
+      
 
       {error && (
         <div className="page-error">
@@ -647,7 +647,7 @@ export const Products = () => {
         </div>
       )}
 
-      }
+      
 
       {!loading && !error && (
         <>
@@ -809,8 +809,7 @@ export const Products = () => {
         </>
       )}
 
-      }
-
+      
       {showDetails &&
         selectedProduct && (
           <div className="customer-modal-backdrop">
