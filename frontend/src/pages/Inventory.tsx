@@ -204,7 +204,7 @@ export const Inventory = () => {
         </div>
       )}
 
-      }
+      
 
       {canManageStock && (
         <form
@@ -343,7 +343,7 @@ export const Inventory = () => {
         </form>
       )}
 
-      }
+      
 
       <div className="inventory-section">
         <div className="section-header">
@@ -414,7 +414,7 @@ export const Inventory = () => {
         )}
       </div>
 
-      }
+      
 
       <div className="inventory-section">
         <div className="section-header" style={{ flexWrap: "wrap", gap: "16px" }}>
