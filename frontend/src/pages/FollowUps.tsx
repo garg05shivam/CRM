@@ -233,7 +233,7 @@ export const FollowUps = () => {
       {error && <div className="page-error">{error}</div>}
       {success && <div className="page-success">{success}</div>}
 
-      
+      {/* New / Edit Form */}
       {showForm && canManage && (
         <form
           className="customer-form"
@@ -282,12 +282,6 @@ export const FollowUps = () => {
                   setForm((cur) => ({ ...cur, note: e.target.value }))
                 }
                 placeholder="Enter details about the conversation or next step..."
-                style={{
-                  width: "100%",
-                  padding: "8px",
-                  borderRadius: "6px",
-                  border: "1px solid #d1d5db",
-                }}
               />
             </label>
           </div>
@@ -315,133 +309,136 @@ export const FollowUps = () => {
         </form>
       )}
 
-      
-      <div className="customer-toolbar" style={{ marginTop: "20px" }}>
-        <form onSubmit={handleSearch} className="search-form">
-          <input
-            type="text"
-            placeholder="Search by customer or notes..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-          <button type="submit">Search</button>
-        </form>
+      {/* Search and Filters */}
+      <form
+        onSubmit={handleSearch}
+        className="customer-search"
+        style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginBottom: "24px" }}
+      >
+        <input
+          type="text"
+          placeholder="Search by customer or notes..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          style={{ flex: 1, minWidth: "220px" }}
+        />
 
-        <div className="filter-buttons" style={{ display: "flex", gap: "8px" }}>
+        <div style={{ display: "flex", gap: "8px" }}>
           {(["ALL", "TODAY", "UPCOMING", "PAST"] as DateFilter[]).map(
-            (filter) => (
-              <button
-                key={filter}
-                type="button"
-                className={`secondary-button ${
-                  dateFilter === filter ? "active-filter" : ""
-                }`}
-                onClick={() => setDateFilter(filter)}
-                style={{
-                  background: dateFilter === filter ? "#2563eb" : undefined,
-                  color: dateFilter === filter ? "#ffffff" : undefined,
-                }}
-              >
-                {filter === "ALL"
-                  ? "All"
-                  : filter === "TODAY"
-                  ? "Today"
-                  : filter === "UPCOMING"
-                  ? "Upcoming"
-                  : "Past"}
-              </button>
-            ),
+            (filter) => {
+              const isActive = dateFilter === filter;
+              return (
+                <button
+                  key={filter}
+                  type="button"
+                  onClick={() => setDateFilter(filter)}
+                  style={{
+                    padding: "10px 16px",
+                    borderRadius: "6px",
+                    border: "1px solid var(--border-color)",
+                    background: isActive ? "var(--accent-primary)" : "var(--bg-surface-raised)",
+                    color: isActive ? "var(--accent-text)" : "var(--text-primary)",
+                    fontWeight: isActive ? 700 : 500,
+                    fontSize: "13px",
+                  }}
+                >
+                  {filter === "ALL"
+                    ? "All"
+                    : filter === "TODAY"
+                    ? "Today"
+                    : filter === "UPCOMING"
+                    ? "Upcoming"
+                    : "Past"}
+                </button>
+              );
+            },
           )}
         </div>
-      </div>
 
-      
-      <div className="inventory-section">
+        <button type="submit" className="primary-button">
+          Search
+        </button>
+      </form>
+
+      {/* Follow-up List */}
+      <div className="customer-table-wrapper">
         {loading ? (
           <div className="page-message">Loading follow-ups...</div>
         ) : followUps.length === 0 ? (
-          <div className="empty-state-box">No follow-ups found.</div>
+          <div className="empty-state">No follow-ups found.</div>
         ) : (
-          <div className="customer-table-wrapper">
-            <table className="customer-table">
-              <thead>
-                <tr>
-                  <th>Customer</th>
-                  <th>Contact</th>
-                  <th>Follow-up Date</th>
-                  <th>Note</th>
-                  <th>Logged By</th>
-                  {canManage && <th>Actions</th>}
-                </tr>
-              </thead>
-              <tbody>
-                {followUps.map((item) => {
-                  const dateStr = item.followUpDate
-                    ? item.followUpDate.split("T")[0]
-                    : "";
-                  const isToday = dateStr === todayStr;
-                  const isPast = dateStr < todayStr;
+          <table className="customer-table">
+            <thead>
+              <tr>
+                <th>Customer</th>
+                <th>Contact</th>
+                <th>Follow-up Date</th>
+                <th>Note</th>
+                <th>Logged By</th>
+                {canManage && <th>Actions</th>}
+              </tr>
+            </thead>
+            <tbody>
+              {followUps.map((item) => {
+                const dateStr = item.followUpDate
+                  ? item.followUpDate.split("T")[0]
+                  : "";
+                const isToday = dateStr === todayStr;
+                const isPast = dateStr < todayStr;
 
-                  return (
-                    <tr key={item.id}>
-                      <td>
-                        <strong>{item.customerName || "N/A"}</strong>
-                        {item.businessName && (
-                          <div style={{ fontSize: "12px", color: "#6b7280" }}>
-                            {item.businessName}
-                          </div>
-                        )}
-                      </td>
-                      <td>{item.mobileNumber || "N/A"}</td>
-                      <td>
-                        <span
-                          className={`status-badge ${
-                            isToday
-                              ? "status-active"
-                              : isPast
-                              ? "status-inactive"
-                              : ""
-                          }`}
-                          style={{
-                            padding: "4px 8px",
-                            borderRadius: "4px",
-                            fontSize: "12px",
-                            fontWeight: 600,
-                          }}
-                        >
-                          {dateStr} {isToday ? "(Today)" : ""}
-                        </span>
-                      </td>
-                      <td style={{ maxWidth: "300px", whiteSpace: "pre-wrap" }}>
-                        {item.note}
-                      </td>
-                      <td>{item.createdByName || "System"}</td>
-                      {canManage && (
-                        <td>
-                          <div className="table-actions">
-                            <button
-                              className="action-button"
-                              onClick={() => handleEdit(item)}
-                            >
-                              Edit
-                            </button>
-                            {user?.role === "ADMIN" && (
-                              <button
-                                className="action-button delete-button"
-                                onClick={() => handleDelete(item.id)}
-                              >
-                                Delete
-                              </button>
-                            )}
-                          </div>
-                        </td>
+                return (
+                  <tr key={item.id}>
+                    <td>
+                      <strong>{item.customerName || "N/A"}</strong>
+                      {item.businessName && (
+                        <div style={{ fontSize: "12px", color: "var(--text-secondary)" }}>
+                          {item.businessName}
+                        </div>
                       )}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                    </td>
+                    <td>{item.mobileNumber || "N/A"}</td>
+                    <td>
+                      <span
+                        className={`status-badge ${
+                          isToday
+                            ? "status-active"
+                            : isPast
+                            ? "status-inactive"
+                            : "status-lead"
+                        }`}
+                      >
+                        {dateStr} {isToday ? "(Today)" : ""}
+                      </span>
+                    </td>
+                    <td style={{ maxWidth: "300px", whiteSpace: "pre-wrap" }}>
+                      {item.note}
+                    </td>
+                    <td>{item.createdByName || "System"}</td>
+                    {canManage && (
+                      <td>
+                        <div className="table-actions">
+                          <button
+                            className="table-button"
+                            onClick={() => handleEdit(item)}
+                          >
+                            Edit
+                          </button>
+                          {user?.role === "ADMIN" && (
+                            <button
+                              className="table-button table-button-danger"
+                              onClick={() => handleDelete(item.id)}
+                            >
+                              Delete
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    )}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         )}
       </div>
     </div>
